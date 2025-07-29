@@ -5,6 +5,9 @@ from parser.ingredients import extract_ingredients
 from parser.steps import extract_steps
 from parser_recipe import ParsedRecipe
 
+user_agent_header = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
 
 def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
     """
@@ -16,7 +19,11 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
     Returns:
         dict: A dictionary containing parsed information.
     """
-    response = requests.get(website_url)
+    response = requests.get(website_url, headers=user_agent_header)
+
+    if response.status_code != 200:
+        raise ValueError(f"Failed to retrieve the page. Status code: {response.status_code}")
+
     soup = BeautifulSoup(response.text, "html.parser")
     ingredients = extract_ingredients(soup)
 
