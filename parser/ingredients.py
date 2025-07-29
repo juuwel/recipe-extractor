@@ -15,14 +15,14 @@ COMMON_INGREDIENT_HEADINGS = [
 
 def extract_ingredients(soup):
     # 1. schema.org
-    ingredients = [tag.get_text(strip=True) for tag in soup.find_all(attrs={"itemprop": "recipeIngredient"})]
+    ingredients = [tag.get_text(" ", strip=True) for tag in soup.find_all(attrs={"itemprop": "recipeIngredient"})]
     if ingredients:
         return ingredients
 
     # 2. Common class names
     for class_name in COMMON_INGREDIENT_CLASS_NAMES:
         for tag in soup.find_all(class_=class_name):
-            ingredients += [li.get_text(strip=True) for li in tag.find_all("li")]
+            ingredients += [li.get_text(" ", strip=True) for li in tag.find_all("li")]
     if ingredients:
         return ingredients
 
@@ -37,7 +37,7 @@ def extract_ingredients(soup):
                 if not ancestor:
                     break
                 for lst in ancestor.find_all(["ul", "ol"]):
-                    items = [li.get_text(strip=True) for li in lst.find_all("li")]
+                    items = [li.get_text(" ", strip=True) for li in lst.find_all("li")]
                     if items:
                         return items
 
@@ -53,7 +53,7 @@ def extract_ingredients(soup):
         if any(li.get("class") and any(c in ["comment", "comments", "footer", "related"] for c in li.get("class")) for
                li in ul.find_all("li")):
             continue
-        items = [li.get_text(strip=True) for li in ul.find_all("li")]
+        items = [li.get_text(" ", strip=True) for li in ul.find_all("li")]
         score = sum(any(word in item.lower() for word in food_keywords) for item in items)
         if score > len(best_list):
             best_list = items
