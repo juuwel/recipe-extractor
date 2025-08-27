@@ -29,7 +29,7 @@ def parse_recipe_endpoint(request: RecipeRequest):
         recipe: ParsedRecipe = parse_recipe(request.url, request.recipe_type)
         logger.info(f"Recipe parsed: {recipe}")
 
-        # notion_client.save_recipe(recipe)
+        # notion_client.save_recipe(recipe) TODO: uncomment when ready
         logger.info(f"Recipe saved to Notion: {recipe.name}")
         return {
             "message": f"Recipe '{recipe.name}' saved to Notion under type '{request.recipe_type}'.",

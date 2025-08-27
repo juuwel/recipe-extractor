@@ -3,7 +3,6 @@ import requests
 
 from parser_recipe import ParsedRecipe
 
-
 class NotionClient(object):
     page_api_url = "https://api.notion.com/v1/pages/"
 

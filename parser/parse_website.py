@@ -14,6 +14,7 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
     Parse the website to extract relevant information.
 
     Args:
+        recipe_type: (str): The type of the recipe (e.g., "Main Dish", "Dessert").
         website_url (str): The URL of the website to parse.
 
     Returns:

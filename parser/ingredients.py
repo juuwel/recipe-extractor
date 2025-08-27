@@ -38,6 +38,19 @@ def find_by_headings(soup):
                     if items:
                         candidate_lists.append(items)
 
+            sibling = heading.next_sibling
+            while sibling:
+                if getattr(sibling, "name", None) in ["ul", "ol"]:
+                    items = [li.get_text(" ", strip=True) for li in sibling.find_all("li")]
+                    if items:
+                        candidate_lists.append(items)
+                elif getattr(sibling, "name", None) in ["div", "section"]:
+                    for lst in sibling.find_all(["ul", "ol"]):
+                        items = [li.get_text(" ", strip=True) for li in lst.find_all("li")]
+                        if items:
+                            candidate_lists.append(items)
+                sibling = sibling.next_sibling
+
     if len(candidate_lists) == 0:
         return None
     elif len(candidate_lists) == 1:
@@ -48,10 +61,20 @@ def find_by_headings(soup):
             keywords = ["g", "ml", "cup", "tbsp", "tsp", "oz", "lb", "teaspoon", "tablespoon"]
             score = 0
             for item in items:
-                if any(word in item.lower() for word in keywords):
+                item_lower = item.lower()
+                has_keyword = any(word in item_lower for word in keywords)
+                has_digit = any(char.isdigit() for char in item)
+                # Reward items that look like ingredients
+                if has_keyword and has_digit:
+                    score += 3
+                elif has_keyword or has_digit:
                     score += 1
-                if any(char.isdigit() for char in item):
-                    score += 1
+                # Penalize very short items (likely not ingredients)
+                if len(item) < 10:
+                    score -= 1
+                # Penalize very long items (likely not ingredients)
+                if len(item) > 100:
+                    score -= 3
             return score
         return max(candidate_lists, key=score_list)
 
