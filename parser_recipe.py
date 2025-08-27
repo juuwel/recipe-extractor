@@ -1,5 +1,5 @@
 ﻿class ParsedRecipe:
-    def __init__(self, website: str, name: str, ingredients: list[str], instructions: str, type: str = "Main Dish"):
+    def __init__(self, website: str, name: str, ingredients: list[str], instructions: list[str], type: str = "Main Dish"):
         self.website = website
         self.name = name
         self.ingredients = ingredients

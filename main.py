@@ -31,9 +31,6 @@ def parse_recipe_endpoint(request: RecipeRequest):
 
         # notion_client.save_recipe(recipe) TODO: uncomment when ready
         logger.info(f"Recipe saved to Notion: {recipe.name}")
-        return {
-            "message": f"Recipe '{recipe.name}' saved to Notion under type '{request.recipe_type}'.",
-            "recipe": recipe.dict() if hasattr(recipe, "dict") else str(recipe)
-        }
+        return recipe
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
