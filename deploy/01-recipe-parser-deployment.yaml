@@ -1,0 +1,58 @@
+﻿apiVersion: v1
+kind: Namespace
+metadata:
+  name: recipe-parser
+  labels:
+    app: recipe-parser
+
+---
+# Secret for credentials.  By defining this as stringData:
+# instead of data: we can enter details here in plain text and
+# it gets base64 encoded when added to the system.
+#
+# Leave unused variables defined, but empty ""
+apiVersion: secrets.doppler.com/v1alpha1
+kind: DopplerSecret
+metadata:
+  name: recipe-parser-credentials
+  namespace: doppler-operator-system
+spec:
+  tokenSecret:
+    name: doppler-token-secret
+    namespace: doppler-operator-system
+  project: recipe-parser
+  config: prod
+  managedSecret:
+    name: credentials
+    namespace: recipe-parser
+    type: Opaque
+  secrets:
+    - NOTION_API_KEY
+    - NOTION_DATABASE_ID
+    - NOTION_VERSION
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recipe-parser
+  namespace: recipe-parser
+  labels:
+    app: recipe-parser
+spec:
+  selector:
+    matchLabels:
+      app: recipe-parser
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: recipe-parser
+    spec:
+      containers:
+        - name: recipe-parser
+          image: ghcr.io/juuwel/recipe-parser:latest
+          envFrom:
+            - secretRef:
+                name: recipe-parser-secret
+          ports:
+            - containerPort: 8000
