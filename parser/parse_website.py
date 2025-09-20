@@ -19,6 +19,7 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
 
     Returns:
         dict: A dictionary containing parsed information.
+        :param recipe_type: The type of the recipe (e.g., "Main Dish", "Dessert").
     """
     response = requests.get(website_url, headers=user_agent_header)
 
@@ -35,5 +36,5 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
         name=soup.find("h1").get_text(strip=True) if soup.find("h1") else "No title found",
         ingredients=ingredients,
         instructions=steps,
-        type=recipe_type
+        recipe_type=recipe_type
     )

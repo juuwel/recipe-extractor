@@ -105,7 +105,7 @@ client = TestClient(app)
 
 @pytest.mark.parametrize("expected", expected_results)
 def test_extract_ingredients(expected):
-    response = client.post("/parse-recipe", json={"url": expected.website, "recipe_type": "Main Dish"})
+    response = client.post("/recipe/parse", json={"url": expected.website, "recipe_type": "Main Dish"})
     assert response.status_code == 200
     data = response.json()
     assert data == expected.__dict__

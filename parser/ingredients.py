@@ -13,13 +13,39 @@ COMMON_INGREDIENT_HEADINGS = [
     "ingredients list"
 ]
 
+def ancestor_search(tag, levels=4) -> list | None:
+    ancestor = tag
+    for _ in range(levels):
+        ancestor = ancestor.parent
+        if not ancestor:
+            break
+        for lst in ancestor.find_all(["ul", "ol"]):
+            items = [li.get_text(" ", strip=True) for li in lst.find_all("li")]
+            if items:
+                return items
+
+    return None
+
+
+def sibling_search(tag, levels=4) -> list | None:
+    # Check next siblings
+    for sibling in tag.find_next_siblings():
+        if sibling.name in ["ul", "ol"]:
+            items = [li.get_text(" ", strip=True) for li in sibling.find_all("li")]
+            if items:
+                return items
+        # Stop if we hit another heading
+        if sibling.name in ["h2", "h3", "h4"]:
+            break
+
+    return None
+
 def find_by_headings(soup):
     """
     Find elements by headings, looking for lists of ingredients.
 
     Args:
         soup (BeautifulSoup): The BeautifulSoup object to search in.
-        headings (list): List of headings to look for.
 
     Returns:
         list: List of ingredients found under the specified headings.
@@ -28,15 +54,17 @@ def find_by_headings(soup):
     for heading in soup.find_all(["h2", "h3", "h4"]):
         heading_text = heading.get_text(" ", strip=True).lower()
         if any(h in heading_text for h in COMMON_INGREDIENT_HEADINGS):
-            ancestor = heading
-            for _ in range(4):
-                ancestor = ancestor.parent
-                if not ancestor:
-                    break
-                for lst in ancestor.find_all(["ul", "ol"]):
-                    items = [li.get_text(" ", strip=True) for li in lst.find_all("li")]
-                    if items:
-                        candidate_lists.append(items)
+            # Check immediate next sibling
+            search_result = sibling_search(heading)
+            if search_result:
+                candidate_lists.append(search_result)
+                continue
+
+            # If not found in siblings, search ancestors
+            search_result = ancestor_search(heading)
+            if search_result:
+                candidate_lists.append(search_result)
+                continue
 
             sibling = heading.next_sibling
             while sibling:

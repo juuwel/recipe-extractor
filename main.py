@@ -15,22 +15,34 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = getLogger(__name__)
 app = FastAPI()
 notion_client = NotionClient()
-recipe_types = ["Main Dish", "Dessert", "Side Dish", "Breakfast"]
+recipe_types = ["Main Dish", "Dessert", "Side Dish", "Breakfast", "Test"]
 
 class RecipeRequest(BaseModel):
     url: str
     recipe_type: str
 
-@app.post("/parse-recipe")
+@app.post("/recipe/parse")
 def parse_recipe_endpoint(request: RecipeRequest):
     if request.recipe_type not in recipe_types:
         raise HTTPException(status_code=400, detail="Invalid recipe type.")
     try:
         recipe: ParsedRecipe = parse_recipe(request.url, request.recipe_type)
         logger.info(f"Recipe parsed: {recipe}")
-
-        # notion_client.save_recipe(recipe) TODO: uncomment when ready
-        logger.info(f"Recipe saved to Notion: {recipe.name}")
         return recipe
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/recipe")
+def save_recipe_endpoint(recipe: ParsedRecipe):
+    if not recipe.ingredients or not recipe.instructions:
+        raise HTTPException(status_code=400, detail="Recipe must have ingredients and instructions.")
+
+    if recipe.recipe_type not in recipe_types:
+        raise HTTPException(status_code=400, detail="Invalid recipe type.")
+
+    try:
+        notion_client.save_recipe(recipe)
+        logger.info(f"Recipe saved to Notion: {recipe.name}")
+        return {"message": f"Recipe '{recipe.name}' saved to Notion."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
