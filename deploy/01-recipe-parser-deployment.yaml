@@ -23,7 +23,7 @@ spec:
   project: recipe-parser
   config: prod
   managedSecret:
-    name: credentials
+    name: recipe-parser-secret
     namespace: recipe-parser
     type: Opaque
   secrets:
