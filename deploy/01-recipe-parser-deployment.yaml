@@ -58,6 +58,9 @@ spec:
                 name: recipe-parser-secret
           ports:
             - containerPort: 8000
+          volumeMounts:
+            - name: db-storage
+              mountPath: /app/data
           resources:
             requests:
               cpu: 100m
@@ -65,3 +68,7 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: recipe-parser-db

@@ -1,11 +1,18 @@
 ﻿import pytest
 
-from parser_recipe import ParsedRecipe
 from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock
+
+mock_db_client = MagicMock()
+mock_db_client.database = MagicMock()
+patcher = patch("infrastructure.persistence.database_client.DatabaseClient", return_value=mock_db_client)
+patcher.start()
+
+from src.datamodel.recipe_dtos import ParsedRecipeDto
 from main import app
 
 expected_results = [
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://thehappypear.ie/plant-based-and-vegan-recipes/chickpea-curry",
         name="Chickpea Curry",
         ingredients=[
@@ -24,7 +31,7 @@ expected_results = [
             'Add the lime juice, season to taste and serve with avocado and the grain of your choice. Lovely!'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://www.noracooks.com/chickpea-curry",
         name="Easy Chickpea Curry",
         ingredients=[
@@ -39,7 +46,7 @@ expected_results = [
             'Serve with rice and/orEasy Vegan Naan. Sprinkle with chopped cilantro and serve with lime wedges. Enjoy!'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://hostthetoast.com/easy-chickpea-curry/",
         name="Easy Chickpea Curry",
         ingredients=[
@@ -56,7 +63,7 @@ expected_results = [
             'Garnish with chopped cilantro and serve with lime wedges over basmati rice and/or with naan.'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://jessicainthekitchen.com/coconut-chickpea-curry-recipe/",
         name="Coconut Chickpea Curry (Vegan & GF)",
         ingredients=[
@@ -80,7 +87,7 @@ expected_results = [
             'Taste the curry and season with salt and pepper if you desire. Remove the curry from the heat and squeeze a lime lightly over the top of the curry, stirring to combine. Don’t skip this step!! Allow to cool slightly and then serve. Enjoy!'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://thehappypear.ie/plant-based-and-vegan-recipes/chickpea-curry/",
         name="Chickpea Curry",
         ingredients=[
@@ -98,6 +105,27 @@ expected_results = [
             'Chop the coriander and add to the pan along with the lime zest.',
             'Add the lime juice, season to taste and serve with avocado and the grain of your choice. Lovely!'
         ]
+    ),
+    ParsedRecipeDto(
+        website="https://www.littlespicejar.com/protein-bagels/",
+        name="Homemade High Protein Bagels",
+        ingredients=[
+            "2¼ cups all purpose flour (or bread flour)",
+            "4 teaspoons baking powder",
+            "1 teaspoon kosher salt",
+            "1½ cup greek yogurt",
+            "1 egg white, lightly beaten",
+            "Sesame seeds or everything bagel seasoning"
+        ],
+        instructions=[
+            "PREP:Position a rack in the center of the oven and preheat the oven to 350ºF. Line a baking sheet with parchment paper; set aside.",
+            "MIX:In a bowl, whisk the dry ingredients until mixed. Then add the greek yogurt and mix together until a dough forms. You might want to use your hands to make this easier!",
+            "DIVIDE:Turn the dough out onto a clean surface. Divide it out into 6 equal pieces. If the dough is sticky dust with flour, I didn’t need to.",
+            "ROLL:out the dough into a thick rope, about 7-8 inches in length. Join the ends and gently press. Place your hand through the hole gently roll the joining part on the counter so that the ends fuse. Place the bagels on the prepared baking sheet and let sit for 5-10 minutes if possible. This allows the bagels to puff up more.",
+            "BRUSH AND SPRINKLE:On a clean plate, place one bagel, brush with the beaten egg white. Sprinkle with sesame seeds or bagel seasoning. Place the bagel on the baking sheet and repeat with the remaining bagels.",
+            "BAKE:Place the pan in the oven and bake the bagels for 20-25 minutes or golden brown on top. Remove the bagels to a wire rack and let them rest for 10 minutes or until cooled so you can slice them. Toast if desired and spread with cream cheese. Store leftover bagels in an airtight container for up to 4 days."
+        ],
+        recipe_type="Main Dish"
     )
 ]
 
