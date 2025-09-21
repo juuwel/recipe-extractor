@@ -1,0 +1,36 @@
+﻿name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+  build-images:
+      name: Build and Push Docker Image
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Build and tag image
+          run: |
+              docker build -t ghcr.io/${{ github.actor }}/recipe-parser .
+              docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:${{ github.sha }}
+              docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:latest
+        - name: Push Docker image
+          run: |
+              docker push ghcr.io/${{ github.actor }}/recipe-parser:${{ github.sha }}
+              docker push ghcr.io/${{ github.actor }}/recipe-parser:latest
