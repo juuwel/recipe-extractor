@@ -1,7 +1,7 @@
 ﻿import os
 import requests
 
-from parser_recipe import ParsedRecipe
+from datamodel.recipe_dtos import ParsedRecipeDto
 
 class NotionClient(object):
     page_api_url = "https://api.notion.com/v1/pages/"
@@ -13,7 +13,7 @@ class NotionClient(object):
             "Notion-Version": os.environ["NOTION_VERSION"],
         }
 
-    def save_recipe(self, recipe: ParsedRecipe) -> dict:
+    def save_recipe(self, recipe: ParsedRecipeDto) -> dict:
         headers = self.prepare_headers()
 
         request_body = {

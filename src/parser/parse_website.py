@@ -3,13 +3,13 @@ from bs4 import BeautifulSoup
 
 from parser.ingredients import extract_ingredients
 from parser.steps import extract_steps
-from parser_recipe import ParsedRecipe
+from datamodel.recipe_dtos import ParsedRecipeDto
 
 user_agent_header = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
-def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
+def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipeDto:
     """
     Parse the website to extract relevant information.
 
@@ -31,7 +31,7 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipe:
 
     steps = extract_steps(soup)
 
-    return ParsedRecipe(
+    return ParsedRecipeDto(
         website=website_url,
         name=soup.find("h1").get_text(strip=True) if soup.find("h1") else "No title found",
         ingredients=ingredients,
