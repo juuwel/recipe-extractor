@@ -1,11 +1,11 @@
 ﻿import pytest
 
-from parser_recipe import ParsedRecipe
+from datamodel.recipe_dtos import ParsedRecipeDto
 from fastapi.testclient import TestClient
 from main import app
 
 expected_results = [
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://thehappypear.ie/plant-based-and-vegan-recipes/chickpea-curry",
         name="Chickpea Curry",
         ingredients=[
@@ -24,7 +24,7 @@ expected_results = [
             'Add the lime juice, season to taste and serve with avocado and the grain of your choice. Lovely!'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://www.noracooks.com/chickpea-curry",
         name="Easy Chickpea Curry",
         ingredients=[
@@ -39,7 +39,7 @@ expected_results = [
             'Serve with rice and/orEasy Vegan Naan. Sprinkle with chopped cilantro and serve with lime wedges. Enjoy!'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://hostthetoast.com/easy-chickpea-curry/",
         name="Easy Chickpea Curry",
         ingredients=[
@@ -56,7 +56,7 @@ expected_results = [
             'Garnish with chopped cilantro and serve with lime wedges over basmati rice and/or with naan.'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://jessicainthekitchen.com/coconut-chickpea-curry-recipe/",
         name="Coconut Chickpea Curry (Vegan & GF)",
         ingredients=[
@@ -80,7 +80,7 @@ expected_results = [
             'Taste the curry and season with salt and pepper if you desire. Remove the curry from the heat and squeeze a lime lightly over the top of the curry, stirring to combine. Don’t skip this step!! Allow to cool slightly and then serve. Enjoy!'
         ]
     ),
-    ParsedRecipe(
+    ParsedRecipeDto(
         website="https://thehappypear.ie/plant-based-and-vegan-recipes/chickpea-curry/",
         name="Chickpea Curry",
         ingredients=[
