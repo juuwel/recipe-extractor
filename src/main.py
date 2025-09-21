@@ -1,11 +1,7 @@
-﻿import os
-
-import dotenv
+﻿from contextlib import asynccontextmanager
 
 from datamodel.entities import TestEntity
-from infrastructure.persistance.database_client import DatabaseClient
-
-dotenv.load_dotenv(".env.template")
+from infrastructure.persistence.database_client import DatabaseClient
 
 from fastapi import FastAPI, HTTPException
 
@@ -18,11 +14,20 @@ from logging import getLogger
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = getLogger(__name__)
-app = FastAPI()
-notion_client: NotionClient = NotionClient()
-db_client: DatabaseClient = DatabaseClient()
+notion_client: NotionClient | None = None
+db_client: DatabaseClient | None = None
 
-db_client.database.create_tables([TestEntity])
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global notion_client, db_client
+    notion_client = NotionClient()
+    db_client = DatabaseClient()
+    db_client.database.create_tables([TestEntity])
+    yield
+    if db_client:
+        db_client.disconnect()
+
+app = FastAPI(lifespan=lifespan)
 
 recipe_types = ["Main Dish", "Dessert", "Side Dish", "Breakfast", "Test"]
 
