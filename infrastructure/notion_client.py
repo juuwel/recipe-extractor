@@ -33,7 +33,7 @@ class NotionClient(object):
                 },
                 "Tags": {
                     "multi_select": [
-                        {"name": recipe.type}
+                        {"name": recipe.recipe_type}
                     ]
                 },
             },

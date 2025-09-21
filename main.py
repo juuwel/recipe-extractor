@@ -27,7 +27,7 @@ def parse_recipe_endpoint(request: RecipeRequest):
         raise HTTPException(status_code=400, detail="Invalid recipe type.")
     try:
         recipe: ParsedRecipe = parse_recipe(request.url, request.recipe_type)
-        logger.info(f"Recipe parsed: {recipe}")
+        logger.info(f"Recipe parsed: {recipe.name}")
         return recipe
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

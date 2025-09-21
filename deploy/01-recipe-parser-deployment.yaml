@@ -48,6 +48,8 @@ spec:
       labels:
         app: recipe-parser
     spec:
+      imagePullSecrets:
+        - name: github-secret
       containers:
         - name: recipe-parser
           image: ghcr.io/juuwel/recipe-parser:latest
@@ -56,3 +58,10 @@ spec:
                 name: recipe-parser-secret
           ports:
             - containerPort: 8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
