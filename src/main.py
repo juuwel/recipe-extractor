@@ -61,10 +61,8 @@ def save_recipe_endpoint(recipe: ParsedRecipeDto):
 @app.post("/test")
 def test_endpoint():
     try:
-        db_client.connect()
         test_entity = TestEntity.create(id=1, name="Test Name")
         fetched_entity = TestEntity.get(TestEntity.id == 1)
-        db_client.disconnect()
         return {"id": fetched_entity.id, "name": fetched_entity.name}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
