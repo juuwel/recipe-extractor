@@ -2,6 +2,6 @@
 
 COPY . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install .
 
-ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
