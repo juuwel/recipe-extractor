@@ -10,7 +10,7 @@ name = "recipe-extractor"
 dynamic = ["dependencies"]
 version = "0.1.0"
 description = "A tool to extract ingredients and instructions from recipe URLs and store them in Notion and a database."
-requires-python = ">= 3.11"
+requires-python = ">= 3.12"
 authors = [
     { name = "Júlia Ilášová" }
 ]
