@@ -82,7 +82,7 @@ class NotionClient(object):
         self.clear_all_blocks(page_id)
 
         headers = self.prepare_headers()
-        url = f"{self.blocks_api_url}{page_id}"
+        url = f"{self.blocks_api_url}{page_id}/children"
 
         request_body = {"children": self.__prepare_children_blocks(recipe)}
         response = requests.patch(url, headers=headers, json=request_body)
