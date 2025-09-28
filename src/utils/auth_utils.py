@@ -22,10 +22,5 @@ def verify_webhook_token(token: str) -> bool:
         secret_key.encode(), salted_message.encode(), hashlib.sha512
     ).hexdigest()
 
-    print(f"Salted Token: {expected_token}")
-    print(
-        f"Webhook URL: https://recipe.buchtik.top/webhook/notion?token={expected_token}"
-    )
-
     # Use constant-time comparison to prevent timing attacks
     return hmac.compare_digest(token, expected_token)
