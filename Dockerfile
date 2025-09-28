@@ -1,8 +1,15 @@
-FROM astral/uv:python3.13-trixie-slim
+﻿FROM python:3.12.11-alpine
 
 WORKDIR /app
-COPY uv.lock pyproject.toml ./
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY src/ ./src/
+
+ENV PYTHONPATH=/app/src
+
+EXPOSE 8000
 
 RUN uv sync --frozen --no-dev
 
