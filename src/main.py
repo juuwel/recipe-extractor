@@ -12,6 +12,8 @@ from datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
 import logging
 from logging import getLogger
 
+from src.utils.auth_utils import verify_webhook_token
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
@@ -69,6 +71,12 @@ def save_recipe_endpoint(recipe: ParsedRecipeDto):
 @app.post("/webhook/notion")
 async def notion_webhook(request: Request):
     """Receive webhook from Notion when database is updated"""
+
+    token = request.query_params.get("token")
+    if not verify_webhook_token(token):
+        logger.warning("Invalid webhook token received")
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
+
     try:
         payload = await request.json()
         logger.info(f"Received Notion webhook: {payload}")
