@@ -25,11 +25,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Sanitize branch name
+        id: sanitize
+        run: |
+          # Replace / with - and make lowercase for Docker tag compatibility
+          CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
+          echo "clean_branch=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
+          echo "Using sanitized branch name: $CLEAN_BRANCH"
+
       - name: Build and tag image (${{ github.ref_name }})
         run: |
           docker build -t ghcr.io/${{ github.actor }}/recipe-parser .
           docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:${{ github.sha }}
-          docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:${{ github.ref_name }}
+          docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:${{ steps.sanitize.outputs.clean_branch }}
           if [ "${{ github.ref_name }}" = "release" ]; then
             docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:latest
           fi
@@ -37,7 +45,7 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ghcr.io/${{ github.actor }}/recipe-parser:${{ github.sha }}
-          docker push ghcr.io/${{ github.actor }}/recipe-parser:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.actor }}/recipe-parser:${{ steps.sanitize.outputs.clean_branch }}
           if [ "${{ github.ref_name }}" = "release" ]; then
             docker push ghcr.io/${{ github.actor }}/recipe-parser:latest
           fi
