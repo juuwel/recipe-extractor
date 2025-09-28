@@ -30,6 +30,9 @@ spec:
     - NOTION_API_KEY
     - NOTION_DATABASE_ID
     - NOTION_VERSION
+    - DATABASE_CONNECTION_STRING
+    - WEBHOOK_SALT
+    - WEBHOOK_SECRET_KEY
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -53,6 +56,7 @@ spec:
       containers:
         - name: recipe-parser
           image: ghcr.io/juuwel/recipe-parser:latest
+          imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: recipe-parser-secret
