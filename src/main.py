@@ -75,24 +75,32 @@ async def notion_webhook(request: Request):
     token = request.query_params.get("token")
     if not verify_webhook_token(token):
         logger.warning("Invalid webhook token received")
-        raise HTTPException(status_code=401, detail="Invalid authentication token")
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
     try:
         payload = await request.json()
         logger.info(f"Received Notion webhook: {payload}")
 
         # Extract page data from webhook payload
-        if payload.get("type") == "page" and payload.get("action") == "updated":
-            page_id = payload["data"]["object"]["id"]
+        if payload.get("data", {}).get("object") == "page":
+            page_id = payload["data"]["id"]
 
-            # Get page properties from Notion
-            url = payload["data"]["object"]["properties"].get("URL", {}).get("url")
-            recipe_type = (
-                payload["data"]["object"]["properties"]
-                .get("Tags", {})
-                .get("multi_select", [{}])[0]
-                .get("name", "Main Dish")
-            )
+            # Get page properties from the webhook payload directly
+            properties = payload["data"].get("properties", {})
+
+            # Extract URL from Source property
+            source_prop = properties.get("Source", {})
+            url = source_prop.get("url") if source_prop.get("type") == "url" else None
+
+            # Extract recipe type from Tags multi_select
+            tags_prop = properties.get("Tags", {})
+            recipe_type = "Main Dish"  # default
+            if tags_prop.get("type") == "multi_select" and tags_prop.get(
+                "multi_select"
+            ):
+                recipe_type = tags_prop["multi_select"][0].get("name", "Main Dish")
+
+            logger.info(f"Extracted - URL: {url}, Recipe Type: {recipe_type}")
 
             if url and recipe_type:
                 # Parse the recipe
