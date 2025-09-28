@@ -3,7 +3,7 @@
 from datamodel.entities import TestEntity
 from infrastructure.persistence.database_client import DatabaseClient
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 
 from infrastructure.notion_client import NotionClient
 from parser.parse_website import parse_recipe
@@ -66,11 +66,38 @@ def save_recipe_endpoint(recipe: ParsedRecipeDto):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/test")
-def test_endpoint():
+@app.post("/webhook/notion")
+async def notion_webhook(request: Request):
+    """Receive webhook from Notion when database is updated"""
     try:
-        test_entity = TestEntity.create(id=1, name="Test Name")
-        fetched_entity = TestEntity.get(TestEntity.id == 1)
-        return {"id": fetched_entity.id, "name": fetched_entity.name}
+        payload = await request.json()
+        logger.info(f"Received Notion webhook: {payload}")
+
+        # Extract page data from webhook payload
+        if payload.get("type") == "page" and payload.get("action") == "updated":
+            page_id = payload["data"]["object"]["id"]
+
+            # Get page properties from Notion
+            url = payload["data"]["object"]["properties"].get("URL", {}).get("url")
+            recipe_type = (
+                payload["data"]["object"]["properties"]
+                .get("Tags", {})
+                .get("multi_select", [{}])[0]
+                .get("name", "Main Dish")
+            )
+
+            if url and recipe_type:
+                # Parse the recipe
+                recipe = parse_recipe(url, recipe_type)
+
+                # Update the same page with parsed data
+                notion_client.update_recipe(page_id, recipe)
+
+                logger.info(f"Recipe processed and updated: {recipe.name}")
+                return {"status": "success", "recipe_name": recipe.name}
+
+        return {"status": "ignored", "message": "No action needed"}
+
     except Exception as e:
+        logger.error(f"Webhook processing failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
