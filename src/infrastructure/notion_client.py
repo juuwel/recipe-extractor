@@ -69,6 +69,7 @@ class NotionClient(object):
                 "Name": {"title": [{"text": {"content": recipe.name}}]},
                 "Source": {"url": recipe.website},
                 "Tags": {"multi_select": [{"name": recipe.recipe_type}]},
+                "Processed": {"checkbox": True},
             },
             "children": self.__prepare_children_blocks(recipe),
         }
@@ -80,8 +81,12 @@ class NotionClient(object):
         return response.json()
 
     def update_recipe(self, page_id: str, recipe: ParsedRecipeDto) -> dict:
+        save_response = self.save_recipe(recipe)
+        if not save_response.get("id"):
+            raise Exception("Failed to save recipe before archiving old page.")
+
         self.archive_page(page_id)
-        return self.save_recipe(recipe)
+        return save_response
 
     def archive_page(self, page_id: str):
         headers = self.prepare_headers()
