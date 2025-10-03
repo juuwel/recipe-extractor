@@ -2,6 +2,7 @@
 
 from peewee import SqliteDatabase
 
+
 class DatabaseClient:
     def __init__(self):
         self.database = self.__get_database(

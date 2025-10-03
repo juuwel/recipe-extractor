@@ -7,6 +7,12 @@ spec:
     entryPoints:
       - websecure
     routes:
+        - match: Host(`recipe.buchtik.top`) && PathPrefix(`/webhook`)
+          kind: Rule
+          priority: 100
+          services:
+            - name: recipe-parser
+              port: 80
         - match: Host(`recipe.buchtik.top`) && PathPrefix(`/`)
           kind: Rule
           services:

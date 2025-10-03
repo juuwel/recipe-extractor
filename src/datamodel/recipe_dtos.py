@@ -1,6 +1,7 @@
 ﻿from pydantic import BaseModel
 from typing import List
 
+
 class ParsedRecipeDto(BaseModel):
     website: str
     name: str

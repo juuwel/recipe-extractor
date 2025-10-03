@@ -7,10 +7,9 @@ packages = ["src"]
 
 [project]
 name = "recipe-extractor"
-dynamic = ["dependencies"]
 version = "0.1.0"
 description = "A tool to extract ingredients and instructions from recipe URLs and store them in Notion and a database."
-requires-python = ">= 3.11"
+requires-python = ">= 3.13"
 authors = [
     { name = "Júlia Ilášová" }
 ]
@@ -18,8 +17,27 @@ maintainers = [
     { name = "Júlia Ilášová" }
 ]
 
-[tool.setuptools.dynamic]
-dependencies = { file = "requirements.txt" }
+dependencies = [
+    "beautifulsoup4~=4.13.4",
+    "doppler-env~=0.3.1",
+    "fastapi~=0.115.12",
+    "httpx~=0.28.1",
+    "peewee~=3.18.2",
+    "pydantic~=2.11.5",
+    "python-dotenv~=1.1.0",
+    "requests~=2.32.3",
+    "uvicorn~=0.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "flake8>=7.3.0",
+    "flake8-pyproject>=1.2.3",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "pytest-env>=1.1.5",
+    "pytest-mock>=3.15.1",
+]
 
 [tool.pytest.ini_options]
 env = [
@@ -28,3 +46,15 @@ env = [
     "NOTION_VERSION=2022-06-28",
     "DATABASE_CONNECTION_STRING=database-connection-string"
 ]
+
+
+[tool.flake8]
+exclude = [
+    '.venv',
+    '.git',
+    '__pycache__',
+    'build',
+    'dist'
+]
+max-line-length = 127
+max-complexity = 10

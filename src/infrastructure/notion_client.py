@@ -1,10 +1,13 @@
 ﻿import os
+
 import requests
 
 from datamodel.recipe_dtos import ParsedRecipeDto
 
+
 class NotionClient(object):
     page_api_url = "https://api.notion.com/v1/pages/"
+    blocks_api_url = "https://api.notion.com/v1/blocks/"
 
     def prepare_headers(self) -> dict:
         return {
@@ -13,92 +16,82 @@ class NotionClient(object):
             "Notion-Version": os.environ["NOTION_VERSION"],
         }
 
+    def __prepare_children_blocks(self, recipe: ParsedRecipeDto) -> list:
+        return (
+            [
+                {
+                    "type": "heading_2",
+                    "heading_2": {
+                        "rich_text": [
+                            {"type": "text", "text": {"content": "Ingredients"}}
+                        ]
+                    },
+                }
+            ]
+            + [
+                {
+                    "type": "bulleted_list_item",
+                    "bulleted_list_item": {
+                        "rich_text": [{"type": "text", "text": {"content": ingredient}}]
+                    },
+                }
+                for ingredient in recipe.ingredients
+            ]
+            + [
+                {
+                    "type": "heading_2",
+                    "heading_2": {
+                        "rich_text": [
+                            {"type": "text", "text": {"content": "Instructions"}}
+                        ]
+                    },
+                }
+            ]
+            + [
+                {
+                    "type": "numbered_list_item",
+                    "numbered_list_item": {
+                        "rich_text": [
+                            {"type": "text", "text": {"content": instruction}}
+                        ]
+                    },
+                }
+                for instruction in recipe.instructions
+            ]
+        )
+
     def save_recipe(self, recipe: ParsedRecipeDto) -> dict:
         headers = self.prepare_headers()
 
         request_body = {
-            "parent": {"database_id": os.environ["NOTION_DATABASE_ID"]},
+            "parent": {"data_source_id": os.environ["NOTION_DATABASE_ID"]},
             "properties": {
-                "Name": {
-                    "title": [
-                        {
-                            "text": {
-                                "content": recipe.name
-                            }
-                        }
-                    ]
-                },
-                "Source": {
-                    "url": recipe.website
-                },
-                "Tags": {
-                    "multi_select": [
-                        {"name": recipe.recipe_type}
-                    ]
-                },
+                "Name": {"title": [{"text": {"content": recipe.name}}]},
+                "Source": {"url": recipe.website},
+                "Tags": {"multi_select": [{"name": recipe.recipe_type}]},
+                "Processed": {"checkbox": True},
             },
-            "children": [
-                            {
-                                "type": "heading_2",
-                                "heading_2": {
-                                    "rich_text": [
-                                        {
-                                            "type": "text",
-                                            "text": {
-                                                "content": "Ingredients"
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        ] + [
-                            {
-                                "type": "bulleted_list_item",
-                                "bulleted_list_item": {
-                                    "rich_text": [
-                                        {
-                                            "type": "text",
-                                            "text": {
-                                                "content": ingredient
-                                            }
-                                        }
-                                    ]
-                                }
-                            } for ingredient in recipe.ingredients
-                        ] + [
-                            {
-                                "type": "heading_2",
-                                "heading_2": {
-                                    "rich_text": [
-                                        {
-                                            "type": "text",
-                                            "text": {
-                                                "content": "Instructions"
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        ] +
-                        [
-                            {
-                                "type": "numbered_list_item",
-                                "numbered_list_item": {
-                                    "rich_text": [
-                                        {
-                                            "type": "text",
-                                            "text": {
-                                                "content": instruction
-                                            }
-                                        }
-                                    ]
-                                }
-                            } for instruction in recipe.instructions
-                        ]
+            "children": self.__prepare_children_blocks(recipe),
         }
         response = requests.post(self.page_api_url, headers=headers, json=request_body)
 
         if response.status_code != 200:
             raise Exception(f"Failed to create entry: {response.text}")
 
+        return response.json()
+
+    def update_recipe(self, page_id: str, recipe: ParsedRecipeDto) -> dict:
+        save_response = self.save_recipe(recipe)
+        if not save_response.get("id"):
+            raise Exception("Failed to save recipe before archiving old page.")
+
+        self.archive_page(page_id)
+        return save_response
+
+    def archive_page(self, page_id: str):
+        headers = self.prepare_headers()
+        url = f"{self.page_api_url}{page_id}"
+        response = requests.patch(url, headers=headers, json={"archived": True})
+        if response.status_code != 200:
+            raise Exception(f"Failed to archive page: {response.text}")
         return response.json()
