@@ -55,7 +55,7 @@ spec:
         - name: github-secret
       containers:
         - name: recipe-parser
-          image: ghcr.io/juuwel/recipe-parser:latest
+          image: ghcr.io/juuwel/recipe-extractor:latest
           imagePullPolicy: Always
           envFrom:
             - secretRef:
