@@ -11,6 +11,15 @@ ENV PYTHONPATH=/app/src
 
 EXPOSE 8000
 
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+
+ENV PYTHONPATH=/app/src
+
+EXPOSE 8000
+
 RUN uv sync --frozen --no-dev
 
 ENV PYTHONPATH=/app/src
