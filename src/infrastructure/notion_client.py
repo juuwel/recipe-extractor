@@ -1,4 +1,5 @@
 ﻿import os
+
 import requests
 
 from datamodel.recipe_dtos import ParsedRecipeDto
@@ -79,35 +80,13 @@ class NotionClient(object):
         return response.json()
 
     def update_recipe(self, page_id: str, recipe: ParsedRecipeDto) -> dict:
-        self.clear_all_blocks(page_id)
+        self.archive_page(page_id)
+        return self.save_recipe(recipe)
 
+    def archive_page(self, page_id: str):
         headers = self.prepare_headers()
-        url = f"{self.blocks_api_url}{page_id}/children"
-
-        request_body = {"children": self.__prepare_children_blocks(recipe)}
-        response = requests.patch(url, headers=headers, json=request_body)
-
+        url = f"{self.page_api_url}{page_id}"
+        response = requests.patch(url, headers=headers, json={"archived": True})
         if response.status_code != 200:
-            raise Exception(f"Failed to update entry: {response.text}")
-
+            raise Exception(f"Failed to archive page: {response.text}")
         return response.json()
-
-    def clear_all_blocks(self, block_id: str):
-        """Delete all child blocks of a given block (e.g., a page)"""
-        headers = self.prepare_headers()
-        url = f"{self.blocks_api_url}{block_id}/children?page_size=100"
-
-        # Fetch existing children
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            raise Exception(f"Failed to fetch children: {response.text}")
-
-        children = response.json().get("results", [])
-        for child in children:
-            child_id = child["id"]
-            del_url = f"{self.blocks_api_url}{child_id}"
-            del_response = requests.delete(del_url, headers=headers)
-            if del_response.status_code != 200:
-                raise Exception(
-                    f"Failed to delete block {child_id}: {del_response.text}"
-                )
