@@ -3,15 +3,16 @@
     "ingredients",
     "recipe-ingredient",
     "recipe-ingredients",
-    "ingredient-list"
+    "ingredient-list",
 ]
 
 COMMON_INGREDIENT_HEADINGS = [
     "ingredients",
     "ingredient list",
     "what you need",
-    "ingredients list"
+    "ingredients list",
 ]
+
 
 def ancestor_search(tag, levels=4) -> list | None:
     ancestor = tag
@@ -39,6 +40,7 @@ def sibling_search(tag, levels=4) -> list | None:
             break
 
     return None
+
 
 def find_by_headings(soup):
     """
@@ -69,12 +71,16 @@ def find_by_headings(soup):
             sibling = heading.next_sibling
             while sibling:
                 if getattr(sibling, "name", None) in ["ul", "ol"]:
-                    items = [li.get_text(" ", strip=True) for li in sibling.find_all("li")]
+                    items = [
+                        li.get_text(" ", strip=True) for li in sibling.find_all("li")
+                    ]
                     if items:
                         candidate_lists.append(items)
                 elif getattr(sibling, "name", None) in ["div", "section"]:
                     for lst in sibling.find_all(["ul", "ol"]):
-                        items = [li.get_text(" ", strip=True) for li in lst.find_all("li")]
+                        items = [
+                            li.get_text(" ", strip=True) for li in lst.find_all("li")
+                        ]
                         if items:
                             candidate_lists.append(items)
                 sibling = sibling.next_sibling
@@ -86,7 +92,17 @@ def find_by_headings(soup):
     else:
         # Score lists for measurement/food keywords and numbers
         def score_list(items):
-            keywords = ["g", "ml", "cup", "tbsp", "tsp", "oz", "lb", "teaspoon", "tablespoon"]
+            keywords = [
+                "g",
+                "ml",
+                "cup",
+                "tbsp",
+                "tsp",
+                "oz",
+                "lb",
+                "teaspoon",
+                "tablespoon",
+            ]
             score = 0
             for item in items:
                 item_lower = item.lower()
@@ -104,12 +120,16 @@ def find_by_headings(soup):
                 if len(item) > 100:
                     score -= 3
             return score
+
         return max(candidate_lists, key=score_list)
 
 
 def extract_ingredients(soup):
     # 1. schema.org
-    ingredients = [tag.get_text(" ", strip=True) for tag in soup.find_all(attrs={"itemprop": "recipeIngredient"})]
+    ingredients = [
+        tag.get_text(" ", strip=True)
+        for tag in soup.find_all(attrs={"itemprop": "recipeIngredient"})
+    ]
     if ingredients:
         return ingredients
 
@@ -127,18 +147,40 @@ def extract_ingredients(soup):
     # 4. Heuristic: find the list with most food-like items, but skip comment sections
     all_lists = soup.find_all(["ul", "ol"])
     best_list = []
-    food_keywords = ["g", "ml", "cup", "tbsp", "tsp", "salt", "sugar", "flour", "egg", "oil", "butter"]
+    food_keywords = [
+        "g",
+        "ml",
+        "cup",
+        "tbsp",
+        "tsp",
+        "salt",
+        "sugar",
+        "flour",
+        "egg",
+        "oil",
+        "butter",
+    ]
     for ul in all_lists:
         # Skip lists inside comments, nav, header, or unrelated sections
-        if ul.find_parent(class_=["comment", "comments", "footer", "related", "nav", "menu", "header"]) or \
-           ul.find_parent(["nav", "header"]):
+        if ul.find_parent(
+            class_=["comment", "comments", "footer", "related", "nav", "menu", "header"]
+        ) or ul.find_parent(["nav", "header"]):
             continue
         # Skip if any li has unwanted class
-        if any(li.get("class") and any(c in ["comment", "comments", "footer", "related", "nav", "menu", "header"] for c in li.get("class")) for
-               li in ul.find_all("li")):
+        if any(
+            li.get("class")
+            and any(
+                c
+                in ["comment", "comments", "footer", "related", "nav", "menu", "header"]
+                for c in li.get("class")
+            )
+            for li in ul.find_all("li")
+        ):
             continue
         items = [li.get_text(" ", strip=True) for li in ul.find_all("li")]
-        score = sum(any(word in item.lower() for word in food_keywords) for item in items)
+        score = sum(
+            any(word in item.lower() for word in food_keywords) for item in items
+        )
         if score > len(best_list):
             best_list = items
     return best_list

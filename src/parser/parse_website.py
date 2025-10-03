@@ -9,6 +9,7 @@ user_agent_header = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
+
 def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipeDto:
     """
     Parse the website to extract relevant information.
@@ -24,7 +25,9 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipeDto:
     response = requests.get(website_url, headers=user_agent_header)
 
     if response.status_code != 200:
-        raise ValueError(f"Failed to retrieve the page. Status code: {response.status_code}")
+        raise ValueError(
+            f"Failed to retrieve the page. Status code: {response.status_code}"
+        )
 
     soup = BeautifulSoup(response.text, "html.parser")
     ingredients = extract_ingredients(soup)
@@ -33,8 +36,12 @@ def parse_recipe(website_url: str, recipe_type: str) -> ParsedRecipeDto:
 
     return ParsedRecipeDto(
         website=website_url,
-        name=soup.find("h1").get_text(strip=True) if soup.find("h1") else "No title found",
+        name=(
+            soup.find("h1").get_text(strip=True)
+            if soup.find("h1")
+            else "No title found"
+        ),
         ingredients=ingredients,
         instructions=steps,
-        recipe_type=recipe_type
+        recipe_type=recipe_type,
     )

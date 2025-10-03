@@ -32,6 +32,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "flake8>=7.3.0",
+    "flake8-pyproject>=1.2.3",
     "pytest>=8.4.2",
     "pytest-env>=1.1.5",
     "pytest-mock>=3.15.1",
@@ -44,3 +45,15 @@ env = [
     "NOTION_VERSION=2022-06-28",
     "DATABASE_CONNECTION_STRING=database-connection-string"
 ]
+
+
+[tool.flake8]
+exclude = [
+    '.venv',
+    '.git',
+    '__pycache__',
+    'build',
+    'dist'
+]
+max-line-length = 127
+max-complexity = 10
