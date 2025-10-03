@@ -52,6 +52,7 @@ def parse_recipe_endpoint(request: RecipeRequestDto):
 
 @app.post("/recipe")
 def save_recipe_endpoint(recipe: ParsedRecipeDto):
+    global notion_client
     if not recipe.ingredients or not recipe.instructions:
         raise HTTPException(
             status_code=400, detail="Recipe must have ingredients and instructions."
@@ -103,6 +104,8 @@ async def notion_webhook(request: Request):
             logger.info(f"Extracted - URL: {url}, Recipe Type: {recipe_type}")
 
             if url and recipe_type:
+                global notion_client
+
                 # Parse the recipe
                 recipe = parse_recipe(url, recipe_type)
 
