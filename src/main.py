@@ -1,31 +1,26 @@
-﻿from contextlib import asynccontextmanager
-
-from datamodel.entities import TestEntity
-from infrastructure.persistence.database_client import DatabaseClient
+﻿import logging
+from contextlib import asynccontextmanager
+from logging import getLogger
+from parser.parse_website import parse_recipe
 
 from fastapi import FastAPI, HTTPException, Request
 
-from infrastructure.notion_client import NotionClient
-from parser.parse_website import parse_recipe
+from datamodel.entities import TestEntity
 from datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
-
-import logging
-from logging import getLogger
-
+from infrastructure.notion_client import NotionClient
+from infrastructure.persistence.database_client import DatabaseClient
 from src.utils.auth_utils import verify_webhook_token
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
 logger = getLogger(__name__)
-notion_client: NotionClient
-db_client: DatabaseClient
+db_client: DatabaseClient | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global notion_client, db_client
-    notion_client = NotionClient()
+    global db_client
     db_client = DatabaseClient()
     db_client.database.create_tables([TestEntity])
     yield
@@ -52,7 +47,6 @@ def parse_recipe_endpoint(request: RecipeRequestDto):
 
 @app.post("/recipe")
 def save_recipe_endpoint(recipe: ParsedRecipeDto):
-    global notion_client
     if not recipe.ingredients or not recipe.instructions:
         raise HTTPException(
             status_code=400, detail="Recipe must have ingredients and instructions."
@@ -62,7 +56,7 @@ def save_recipe_endpoint(recipe: ParsedRecipeDto):
         raise HTTPException(status_code=400, detail="Invalid recipe type.")
 
     try:
-        notion_client.save_recipe(recipe)
+        NotionClient().save_recipe(recipe)
         logger.info(f"Recipe saved to Notion: {recipe.name}")
         return {"message": f"Recipe '{recipe.name}' saved to Notion."}
     except Exception as e:
@@ -104,13 +98,12 @@ async def notion_webhook(request: Request):
             logger.info(f"Extracted - URL: {url}, Recipe Type: {recipe_type}")
 
             if url and recipe_type:
-                global notion_client
 
                 # Parse the recipe
                 recipe = parse_recipe(url, recipe_type)
 
                 # Update the same page with parsed data
-                notion_client.update_recipe(page_id, recipe)
+                NotionClient().update_recipe(page_id, recipe)
 
                 logger.info(f"Recipe processed and updated: {recipe.name}")
                 return {"status": "success", "recipe_name": recipe.name}

@@ -15,7 +15,10 @@ repos:
     rev: 6.1.0
     hooks:
       - id: isort
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
+  - repo: local
     hooks:
-      - id: flake8
+      - id: flake8-uv
+        name: flake8 via uv
+        entry: uv run flake8
+        language: system
+        types: [python]
