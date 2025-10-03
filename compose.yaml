@@ -9,6 +9,8 @@
       - NOTION_DATABASE_ID
       - NOTION_VERSION
       - DATABASE_CONNECTION_STRING
+      - WEBHOOK_SECRET_KEY
+      - WEBHOOK_SALT
     volumes:
       - ./data:/data
     ports:

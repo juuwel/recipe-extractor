@@ -18,8 +18,8 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
 logger = getLogger(__name__)
-notion_client: NotionClient | None = None
-db_client: DatabaseClient | None = None
+notion_client: NotionClient
+db_client: DatabaseClient
 
 
 @asynccontextmanager
