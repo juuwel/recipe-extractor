@@ -1,4 +1,4 @@
-FROM astral/uv:python3.13-trixie-slim
+﻿FROM astral/uv:python3.13-trixie-slim
 
 WORKDIR /app
 COPY uv.lock pyproject.toml ./

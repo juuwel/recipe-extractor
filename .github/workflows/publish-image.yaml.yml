@@ -12,25 +12,40 @@ permissions:
 
 jobs:
   build-images:
-      name: Build and Push Docker Image
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Build and tag image
-          run: |
-              docker build -t ghcr.io/${{ github.actor }}/recipe-parser .
-              docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:${{ github.sha }}
-              docker tag ghcr.io/${{ github.actor }}/recipe-parser ghcr.io/${{ github.actor }}/recipe-parser:latest
-        - name: Push Docker image
-          run: |
-              docker push ghcr.io/${{ github.actor }}/recipe-parser:${{ github.sha }}
-              docker push ghcr.io/${{ github.actor }}/recipe-parser:latest
+      - name: Sanitize branch name
+        id: sanitize
+        run: |
+          # Replace / with - and make lowercase for Docker tag compatibility
+          CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
+          echo "clean_branch=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
+          echo "Using sanitized branch name: $CLEAN_BRANCH"
+
+      - name: Build and tag image (${{ github.ref_name }})
+        run: |
+          docker build -t ghcr.io/${{ github.actor }}/recipe-extractor .
+          docker tag ghcr.io/${{ github.actor }}/recipe-extractor ghcr.io/${{ github.actor }}/recipe-extractor:${{ github.sha }}
+          docker tag ghcr.io/${{ github.actor }}/recipe-extractor ghcr.io/${{ github.actor }}/recipe-extractor:${{ steps.sanitize.outputs.clean_branch }}
+          if [ "${{ github.ref_name }}" = "release" ]; then
+            docker tag ghcr.io/${{ github.actor }}/recipe-extractor ghcr.io/${{ github.actor }}/recipe-extractor:latest
+          fi
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.actor }}/recipe-extractor:${{ github.sha }}
+          docker push ghcr.io/${{ github.actor }}/recipe-extractor:${{ steps.sanitize.outputs.clean_branch }}
+          if [ "${{ github.ref_name }}" = "release" ]; then
+            docker push ghcr.io/${{ github.actor }}/recipe-extractor:latest
+          fi

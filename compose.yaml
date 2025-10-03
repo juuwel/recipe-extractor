@@ -1,6 +1,6 @@
 ﻿services:
   parser:
-    image: ghcr.io/juuwel/recipe-parser:latest
+    image: ghcr.io/juuwel/recipe-extractor
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,6 +8,9 @@
       - NOTION_API_KEY
       - NOTION_DATABASE_ID
       - NOTION_VERSION
+      - DATABASE_CONNECTION_STRING
+      - WEBHOOK_SECRET_KEY
+      - WEBHOOK_SALT
     volumes:
       - ./data:/data
     ports:

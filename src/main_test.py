@@ -1,7 +1,7 @@
-﻿import pytest
+﻿from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
 mock_db_client = MagicMock()
 mock_db_client.database = MagicMock()
@@ -11,8 +11,8 @@ patcher = patch(
 )
 patcher.start()
 
-from src.datamodel.recipe_dtos import ParsedRecipeDto
 from main import app
+from src.datamodel.recipe_dtos import ParsedRecipeDto
 
 expected_results = [
     ParsedRecipeDto(
