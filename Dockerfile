@@ -1,18 +1,13 @@
-FROM python:3.13.7-slim
+FROM astral/uv:python3.13-trixie-slim
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-COPY . /app
 WORKDIR /app
-
 COPY uv.lock pyproject.toml ./
+COPY src/ ./src/
 
 RUN uv sync --frozen --no-dev
-
-COPY src/ ./src/
 
 ENV PYTHONPATH=/app/src
 
 EXPOSE 8000
 
-ENTRYPOINT ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
