@@ -12,10 +12,13 @@ from datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
 import logging
 from logging import getLogger
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 logger = getLogger(__name__)
 notion_client: NotionClient | None = None
 db_client: DatabaseClient | None = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,9 +30,11 @@ async def lifespan(app: FastAPI):
     if db_client:
         db_client.disconnect()
 
+
 app = FastAPI(lifespan=lifespan)
 
 recipe_types = ["Main Dish", "Dessert", "Side Dish", "Breakfast", "Test"]
+
 
 @app.post("/recipe/parse")
 def parse_recipe_endpoint(request: RecipeRequestDto):
@@ -42,10 +47,13 @@ def parse_recipe_endpoint(request: RecipeRequestDto):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/recipe")
 def save_recipe_endpoint(recipe: ParsedRecipeDto):
     if not recipe.ingredients or not recipe.instructions:
-        raise HTTPException(status_code=400, detail="Recipe must have ingredients and instructions.")
+        raise HTTPException(
+            status_code=400, detail="Recipe must have ingredients and instructions."
+        )
 
     if recipe.recipe_type not in recipe_types:
         raise HTTPException(status_code=400, detail="Invalid recipe type.")

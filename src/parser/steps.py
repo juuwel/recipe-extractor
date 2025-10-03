@@ -5,7 +5,7 @@
     "steps",
     "directions",
     "recipe-step",
-    "recipe-steps"
+    "recipe-steps",
 ]
 
 COMMON_STEP_HEADINGS = [
@@ -16,8 +16,9 @@ COMMON_STEP_HEADINGS = [
     "cooking instructions",
     "cooking steps",
     "preparation steps",
-    "preparation instructions"
+    "preparation instructions",
 ]
+
 
 def extract_steps(soup):
     # 1. schema.org
