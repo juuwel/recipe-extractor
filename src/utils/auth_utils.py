@@ -2,8 +2,6 @@ import hashlib
 import hmac
 import os
 
-import hmac
-import hashlib
 
 
 def verify_webhook_token(token: str | None) -> bool:
