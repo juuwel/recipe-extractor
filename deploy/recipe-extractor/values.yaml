@@ -1,7 +1,5 @@
 replicaCount: 1
 
-namespace: recipe-extractor
-
 doppler:
   namespace: doppler-operator-system
   project: recipe-parser
