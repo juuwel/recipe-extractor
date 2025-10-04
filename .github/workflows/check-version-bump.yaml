@@ -16,6 +16,7 @@ jobs:
             - name: Check out base branch code
               uses: actions/checkout@v5
               with:
+                  ref: ${{ github.event.pull_request.base.ref }}
                   path: base
 
             - name: Check version bump
