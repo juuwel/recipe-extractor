@@ -50,13 +50,3 @@ app.kubernetes.io/name: {{ include "recipe-extractor.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "recipe-extractor.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "recipe-extractor.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
