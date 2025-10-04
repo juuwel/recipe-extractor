@@ -1,0 +1,41 @@
+replicaCount: 1
+
+namespace: recipe-extractor
+
+doppler:
+  namespace: doppler-operator-system
+  project: recipe-parser
+  config: prod
+
+image:
+  repository: ghcr.io/juuwel/recipe-extractor
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecret: github-secret
+
+tls:
+  certResolver: le
+
+service:
+  annotations: {}
+  type: ClusterIP
+  port: 80
+
+ingressRoute:
+  entryPoints:
+    - websecure
+  host: recipe.buchtik.top
+  routes:
+    - path: /
+      middlewares:
+        - basic-auth
+    - path: /webhook
+      priority: 100
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
