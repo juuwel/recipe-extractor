@@ -1,0 +1,48 @@
+name: Check Version Bump
+
+on:
+    pull_request:
+        branches: [release]
+
+jobs:
+    check-version-bump:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out head branch code
+              uses: actions/checkout@v5
+              with:
+                  path: head
+
+            - name: Check out base branch code
+              uses: actions/checkout@v5
+              with:
+                  path: base
+
+            - name: Check version bump
+              shell: bash
+              run: |
+                  # Compare pyproject.toml
+                  BASE_VERSION=$(grep -E '^\s*version\s*=' base/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+                  HEAD_VERSION=$(grep -E '^\s*version\s*=' head/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+                  if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
+                      echo "pyproject.toml version has not been bumped!"
+                      exit 1
+                  fi
+
+                  # Compare Chart.yaml version
+                  BASE_CHART_VERSION=$(grep '^version:' base/deploy/recipe-extractor/Chart.yaml | head -1 | awk '{print $2}' | tr -d '"')
+                  HEAD_CHART_VERSION=$(grep '^version:' head/deploy/recipe-extractor/Chart.yaml | head -1 | awk '{print $2}' | tr -d '"')
+                  if [ "$BASE_CHART_VERSION" = "$HEAD_CHART_VERSION" ]; then
+                      echo "Chart.yaml version has not been bumped!"
+                      exit 1
+                  fi
+
+                  # Compare Chart.yaml appVersion
+                  BASE_APP_VERSION=$(grep '^appVersion:' base/deploy/recipe-extractor/Chart.yaml | head -1 | awk '{print $2}' | tr -d '"')
+                  HEAD_APP_VERSION=$(grep '^appVersion:' head/deploy/recipe-extractor/Chart.yaml | head -1 | awk '{print $2}' | tr -d '"')
+                  if [ "$BASE_APP_VERSION" = "$HEAD_APP_VERSION" ]; then
+                      echo "Chart.yaml appVersion has not been bumped!"
+                      exit 1
+                  fi
+
+                  echo "Version bump detected in all required files."
