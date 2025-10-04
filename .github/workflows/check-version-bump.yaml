@@ -24,6 +24,11 @@ jobs:
                   # Compare pyproject.toml
                   BASE_VERSION=$(grep -E '^\s*version\s*=' base/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
                   HEAD_VERSION=$(grep -E '^\s*version\s*=' head/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+
+                  echo "BASE_VERSION: $BASE_VERSION"
+                  echo "HEAD_VERSION: $HEAD_VERSION"
+                  diff base/pyproject.toml head/pyproject.toml || true
+
                   if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
                       echo "pyproject.toml version has not been bumped!"
                       exit 1
