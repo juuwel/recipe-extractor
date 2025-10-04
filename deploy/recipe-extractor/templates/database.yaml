@@ -1,8 +1,8 @@
 ﻿apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: recipe-parser-db
-  namespace: recipe-parser
+  name: {{ .Release.Name }}-db
+  namespace: {{ .Values.namespace }}
 spec:
   accessModes:
     - ReadWriteOnce

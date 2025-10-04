@@ -1,0 +1,62 @@
+
+# ---------------------------------------------
+# Helm Chart NOTES for {{ .Chart.Name }}
+# ---------------------------------------------
+
+Thank you for installing **{{ .Chart.Name }}**!
+
+Release name: **{{ .Release.Name }}**
+Namespace: **{{ .Values.namespace }}**
+
+## Service
+
+- Type: `{{ .Values.service.type }}`
+- Port: `{{ .Values.service.port }}`
+
+To get the service details:
+
+  kubectl get svc -n {{ .Values.namespace }}
+
+## Ingress
+
+{{- if .Values.ingressRoute.host }}
+- Host: `{{ .Values.ingressRoute.host }}`
+- EntryPoints:{{- range .Values.ingressRoute.entryPoints }} `{{ . }}`{{- end }}
+- Routes:
+{{- range .Values.ingressRoute.routes }}
+  - Path: `{{ .path }}`{{ if .middlewares }} (middlewares: {{ .middlewares | join ", " }}){{ end }}{{ if .priority }} (priority: {{ .priority }}){{ end }}
+{{- end }}
+
+If using Traefik, your app should be available at:
+
+  https://{{ .Values.ingressRoute.host }}
+{{- else }}
+No ingress host configured.
+{{- end }}
+
+## Doppler Integration
+
+- Doppler Project: `{{ .Values.doppler.project }}`
+- Doppler Config: `{{ .Values.doppler.config }}`
+- Doppler Namespace: `{{ .Values.doppler.namespace }}`
+
+## Persistent Storage
+
+- PVC: `{{ .Release.Name }}-db` (1Gi by default)
+
+## Next Steps
+
+- Check pod status:
+
+  kubectl get pods -n {{ .Values.namespace }}
+
+- View logs:
+
+  kubectl logs deployment/{{ .Release.Name }} -n {{ .Values.namespace }}
+
+- Uninstall:
+
+  helm uninstall {{ .Release.Name }} -n {{ .Values.namespace }}
+
+---
+For more info, see your chart's README or values.yaml.
