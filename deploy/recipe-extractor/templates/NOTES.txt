@@ -6,7 +6,7 @@
 Thank you for installing **{{ .Chart.Name }}**!
 
 Release name: **{{ .Release.Name }}**
-Namespace: **{{ .Values.namespace }}**
+Namespace: **{{ {{ .Release.Namespace }} }}**
 
 ## Service
 
@@ -15,7 +15,7 @@ Namespace: **{{ .Values.namespace }}**
 
 To get the service details:
 
-  kubectl get svc -n {{ .Values.namespace }}
+  kubectl get svc -n {{ {{ .Release.Namespace }} }}
 
 ## Ingress
 
@@ -48,15 +48,15 @@ No ingress host configured.
 
 - Check pod status:
 
-  kubectl get pods -n {{ .Values.namespace }}
+  kubectl get pods -n {{ {{ .Release.Namespace }} }}
 
 - View logs:
 
-  kubectl logs deployment/{{ .Release.Name }} -n {{ .Values.namespace }}
+  kubectl logs deployment/{{ .Release.Name }} -n {{ {{ .Release.Namespace }} }}
 
 - Uninstall:
 
-  helm uninstall {{ .Release.Name }} -n {{ .Values.namespace }}
+  helm uninstall {{ .Release.Name }} -n {{ {{ .Release.Namespace }} }}
 
 ---
 For more info, see your chart's README or values.yaml.

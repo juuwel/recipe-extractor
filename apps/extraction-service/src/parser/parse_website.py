@@ -1,9 +1,8 @@
 ﻿import requests
 from bs4 import BeautifulSoup
-
-from parser.ingredients import extract_ingredients
-from parser.steps import extract_steps
-from datamodel.recipe_dtos import ParsedRecipeDto
+from src.datamodel.recipe_dtos import ParsedRecipeDto
+from src.parser.ingredients import extract_ingredients
+from src.parser.steps import extract_steps
 
 user_agent_header = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

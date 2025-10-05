@@ -2,7 +2,7 @@
 kind: Service
 metadata:
   name: {{ .Release.Name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
   {{- with .Values.service.annotations }}

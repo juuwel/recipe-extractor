@@ -1,8 +1,7 @@
 ﻿import os
 
 import requests
-
-from datamodel.recipe_dtos import ParsedRecipeDto
+from src.datamodel.recipe_dtos import ParsedRecipeDto
 
 
 class NotionClient(object):
