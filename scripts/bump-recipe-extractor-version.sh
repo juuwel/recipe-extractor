@@ -10,9 +10,9 @@ if [[ "$BUMP_TYPE" != "--major" && "$BUMP_TYPE" != "--minor" && "$BUMP_TYPE" != 
 fi
 
 # Extract current version from pyproject.toml
-CUR_VERSION=$(grep -E '^\s*version\s*=' pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+CUR_VERSION=$(grep -E '^\s*version\s*=' apps/extraction-service/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
 if [ -z "$CUR_VERSION" ]; then
-  echo "Could not extract version from pyproject.toml"
+  echo "Could not extract version from apps/extraction-service/pyproject.toml"
   exit 1
 fi
 
@@ -37,7 +37,7 @@ esac
 NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
 # Update pyproject.toml
-sed -i.bak -E "s/^(\s*version\s*=\s*\")[^\"]+(\".*)/\\1${NEW_VERSION}\\2/" pyproject.toml
+sed -i.bak -E "s/^(\s*version\s*=\s*\")[^\"]+(\".*)/\\1${NEW_VERSION}\\2/" apps/extraction-service/pyproject.toml
 
 # Update Chart.yaml (appVersion quoted, version unquoted)
 yq e -i ".appVersion = \"$NEW_VERSION\"" deploy/recipe-extractor/Chart.yaml
@@ -47,6 +47,6 @@ yq e -i ".version = \"$NEW_VERSION\"" deploy/recipe-extractor/Chart.yaml
 sed -i 's/^version: \"\(.*\)\"$/version: \1/' deploy/recipe-extractor/Chart.yaml
 
 # Clean up backup file
-rm pyproject.toml.bak
+rm apps/recipe-extractor/pyproject.toml.bak
 
 echo "Bumped version to $NEW_VERSION"

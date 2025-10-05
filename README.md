@@ -128,7 +128,7 @@ docker compose up --build
 Run the following command to launch the API server:
 
 ```sh
-uvicorn main:app --reload
+uv run uvicorn src.main:app --reload
 ```
 
 _For more details, refer to the code and documentation in the repository._

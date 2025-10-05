@@ -1,0 +1,66 @@
+name: "Build and Push Docker Image"
+description: "Build and push a Docker image for a specified application."
+
+inputs:
+    app-name:
+        description: "Name of the application"
+        required: true
+    context-path:
+        description: "Build context path"
+        required: true
+    dockerfile-path:
+        description: "Path to Dockerfile"
+        required: true
+    registry-username:
+        description: "Registry username"
+        required: true
+    registry-token:
+        description: "Registry token"
+        required: true
+
+runs:
+    using: "composite"
+    steps:
+        - name: Extract version
+          id: version
+          shell: bash
+          run: |
+              if [ -f "${{ inputs.context-path }}/pyproject.toml" ]; then
+                VERSION=$(grep -E '^\s*version\s*=' ${{ inputs.context-path }}/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+              elif [ -f "${{ inputs.context-path }}"/*.csproj ]; then
+                VERSION=$(grep -oP '(?<=<Version>)[^<]+' "${{ inputs.context-path }}"/*.csproj | head -1)
+              else
+                VERSION="latest"
+              fi
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+              registry: ghcr.io
+              username: ${{ inputs.registry-username }}
+              password: ${{ inputs.registry-token }}
+
+        - name: Sanitize branch name
+          id: sanitize
+          shell: bash
+          run: |
+              CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
+              echo "clean_branch=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
+
+        - name: Build and push image
+          shell: bash
+          run: |
+              docker build -t ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ${{ inputs.context-path }}
+              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ github.sha }}
+              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.sanitize.outputs.clean_branch }}
+
+              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ github.sha }}
+              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.sanitize.outputs.clean_branch }}
+
+              if [ "${{ github.ref_name }}" = "release" ]; then
+              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:latest
+              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.version.outputs.version }}
+              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:latest
+              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.version.outputs.version }}
+              fi
