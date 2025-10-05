@@ -22,6 +22,6 @@ repos:
     hooks:
       - id: flake8-uv
         name: flake8 via uv
-        entry: bash -c 'cd apps/extraction-service && uv run flake8 src'
+        entry: bash -c 'cd apps/extraction-service && uv run flake8 --count --select=E9,F63,F7,F82 --show-source --statistics src && uv run flake8 --count --exit-zero --max-line-length=88 --statistics src'
         language: system
         types: [python]

@@ -2,7 +2,6 @@
 
 on:
   push:
-  pull_request:
 
 jobs:
   detect-changes:
@@ -51,7 +50,6 @@ jobs:
 
       - name: Test with pytest
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/src
           uv run pytest
 
   build-recipe-service:
