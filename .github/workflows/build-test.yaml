@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       extraction-service: ${{ steps.changes.outputs.extraction-service }}
+      recipe-service: ${{ steps.changes.outputs.recipe-service }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -19,6 +20,8 @@ jobs:
           filters: |
             extraction-service:
               - 'apps/extraction-service/**'
+            recipe-service:
+              - 'apps/recipe-service/**'
 
   build-extraction-service:
     name: Build and Test Python Service
@@ -56,7 +59,7 @@ jobs:
     name: Build and Test C# Service
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: false # Placeholder - set to true when C# service exists
+    if: ${{ needs.detect-changes.outputs.recipe-service == 'true' }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
