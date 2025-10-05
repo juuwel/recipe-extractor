@@ -1,0 +1,104 @@
+﻿name: Publish Docker Images and Helm Charts
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      extraction-service: ${{ steps.changes.outputs.extraction-service }}
+      recipe-service: ${{ steps.changes.outputs.recipe-service }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Detect changes in apps
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            extraction-service:
+              - 'apps/extraction-service/**'
+            recipe-service:
+              - 'apps/recipe-service/**'
+
+      - name: Set matrix for changed apps
+        id: set-matrix
+        run: |
+          matrix_json="[]"
+
+          if [ "${{ steps.changes.outputs.extraction-service }}" = "true" ]; then
+            matrix_json=$(echo "$matrix_json" | jq '. += [{
+              "app": "extraction-service",
+              "dockerfile": "apps/extraction-service/Dockerfile",
+              "context": "apps/extraction-service"
+            }]')
+          fi
+
+          if [ "${{ steps.changes.outputs.recipe-service }}" = "true" ]; then
+            matrix_json=$(echo "$matrix_json" | jq '. += [{
+              "app": "recipe-service",
+              "dockerfile": "apps/recipe-service/Dockerfile",
+              "context": "apps/recipe-service"
+            }]')
+          fi
+
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
+          echo "Generated matrix:"
+          echo "$matrix_json" | jq '.'
+
+  build-images:
+    name: Build and Push Docker Images
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.matrix != '[]' }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Build and push ${{ matrix.app }}
+        uses: ./.github/actions/build-push-image
+        with:
+          app-name: ${{ matrix.app }}
+          context-path: ${{ matrix.context }}
+          dockerfile-path: ${{ matrix.dockerfile }}
+          registry-username: ${{ github.actor }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-chart:
+    name: Publish Helm Chart
+    runs-on: ubuntu-latest
+    needs: build-images
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.7.0
+        with:
+          charts_dir: deploy
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
