@@ -1,6 +1,5 @@
-﻿from peewee import Model, IntegerField, CharField
-
-from infrastructure.persistence.database_client import DatabaseClient
+﻿from peewee import CharField, IntegerField, Model
+from src.infrastructure.persistence.database_client import DatabaseClient
 
 
 class BaseModel(Model):

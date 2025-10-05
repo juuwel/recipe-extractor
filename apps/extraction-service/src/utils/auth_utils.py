@@ -3,7 +3,6 @@ import hmac
 import os
 
 
-
 def verify_webhook_token(token: str | None) -> bool:
     """Verify salted HMAC webhook token"""
     if not token:

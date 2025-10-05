@@ -11,8 +11,8 @@ patcher = patch(
 )
 patcher.start()
 
-from main import app
 from src.datamodel.recipe_dtos import ParsedRecipeDto
+from src.main import app
 
 expected_results = [
     ParsedRecipeDto(

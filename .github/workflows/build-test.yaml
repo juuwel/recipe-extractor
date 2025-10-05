@@ -2,13 +2,36 @@
 
 on:
   push:
+  pull_request:
 
 jobs:
-  build:
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      extraction-service: ${{ steps.changes.outputs.extraction-service }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Detect changes in extraction service
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            extraction-service:
+              - 'apps/extraction-service/**'
+
+  build-extraction-service:
+    name: Build and Test Python Service
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.extraction-service == 'true' }}
+    defaults:
+      run:
+        working-directory: apps/extraction-service
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
@@ -21,12 +44,35 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names  
+          # stop the build if there are Python syntax errors or undefined names
           uv run flake8 --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           uv run flake8 --count --exit-zero --statistics
 
       - name: Test with pytest
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/src 
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/src
           uv run pytest
+
+  build-recipe-service:
+    name: Build and Test C# Service
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: false # Placeholder - set to true when C# service exists
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore apps/recipe-service
+
+      - name: Build
+        run: dotnet build apps/recipe-service --no-restore
+
+      - name: Test
+        run: dotnet test apps/recipe-service --no-build --verbosity normal

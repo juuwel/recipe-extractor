@@ -3,21 +3,25 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-toml
+        files: ^apps/extraction-service
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: name-tests-test
+        files: ^apps/extraction-service/.*test.*\.py$
   - repo: https://github.com/psf/black
     rev: 25.9.0
     hooks:
       - id: black
+        files: ^apps/extraction-service
   - repo: https://github.com/pycqa/isort
     rev: 6.1.0
     hooks:
       - id: isort
+        files: ^apps/extraction-service
   - repo: local
     hooks:
       - id: flake8-uv
         name: flake8 via uv
-        entry: uv run flake8
+        entry: bash -c 'cd apps/extraction-service && uv run flake8 src'
         language: system
         types: [python]

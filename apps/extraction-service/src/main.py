@@ -1,14 +1,13 @@
 ﻿import logging
 from contextlib import asynccontextmanager
 from logging import getLogger
-from parser.parse_website import parse_recipe
 
 from fastapi import FastAPI, HTTPException, Request
-
-from datamodel.entities import TestEntity
-from datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
-from infrastructure.notion_client import NotionClient
-from infrastructure.persistence.database_client import DatabaseClient
+from src.datamodel.entities import TestEntity
+from src.datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
+from src.infrastructure.notion_client import NotionClient
+from src.infrastructure.persistence.database_client import DatabaseClient
+from src.parser.parse_website import parse_recipe
 from src.utils.auth_utils import verify_webhook_token
 
 logging.basicConfig(

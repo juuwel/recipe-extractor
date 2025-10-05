@@ -5,7 +5,7 @@ on:
         branches: [release]
 
 jobs:
-    check-version-bump:
+    check-version-bump-recipe-extractor:
         runs-on: ubuntu-latest
         steps:
             - name: Check out head branch code
@@ -23,12 +23,12 @@ jobs:
               shell: bash
               run: |
                   # Compare pyproject.toml
-                  BASE_VERSION=$(grep -E '^\s*version\s*=' base/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
-                  HEAD_VERSION=$(grep -E '^\s*version\s*=' head/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+                  BASE_VERSION=$(grep -E '^\s*version\s*=' base/apps/extraction-service/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+                  HEAD_VERSION=$(grep -E '^\s*version\s*=' head/apps/extraction-service/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
 
                   echo "BASE_VERSION: $BASE_VERSION"
                   echo "HEAD_VERSION: $HEAD_VERSION"
-                  diff base/pyproject.toml head/pyproject.toml || true
+                  diff base/apps/extraction-service/pyproject.toml head/apps/extraction-service/pyproject.toml || true
 
                   if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
                       echo "pyproject.toml version has not been bumped!"
