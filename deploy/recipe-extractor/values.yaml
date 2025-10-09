@@ -6,7 +6,7 @@ doppler:
   config: prod
 
 image:
-  repository: ghcr.io/juuwel/recipe-extractor
+  repository: ghcr.io/juuwel/extraction-service
   tag: latest
   pullPolicy: IfNotPresent
   pullSecret: github-secret

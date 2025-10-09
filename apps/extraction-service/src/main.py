@@ -1,12 +1,10 @@
-﻿import logging
+import logging
 from contextlib import asynccontextmanager
 from logging import getLogger
 
 from fastapi import FastAPI, HTTPException, Request
 from src.datamodel.entities import TestEntity
 from src.datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
-from src.infrastructure.notion_client import NotionClient
-from src.infrastructure.persistence.database_client import DatabaseClient
 from src.parser.parse_website import parse_recipe
 from src.utils.auth_utils import verify_webhook_token
 
@@ -14,17 +12,10 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
 logger = getLogger(__name__)
-db_client: DatabaseClient | None = None
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global db_client
-    db_client = DatabaseClient()
-    db_client.database.create_tables([TestEntity])
     yield
-    if db_client:
-        db_client.disconnect()
 
 
 app = FastAPI(lifespan=lifespan)

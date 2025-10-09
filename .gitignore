@@ -3,8 +3,14 @@
 **/**.sqlite
 .env.**
 
+# Python
 .venv
 .pytest_cache
 **/__pycache__/
 
 !.env.template
+
+# C#
+**/obj
+**/bin
+**/appsettings.**.json
