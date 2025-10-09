@@ -2,9 +2,15 @@ using RecipeService.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOptions<NotionClientOptions>()
+    .Bind(builder.Configuration.GetSection("NotionClient"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
