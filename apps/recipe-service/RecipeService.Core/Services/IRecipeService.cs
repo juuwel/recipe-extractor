@@ -6,4 +6,6 @@ namespace RecipeService.Core.Services;
 public interface IRecipeService
 {
     Task<JsonDocument> SaveRecipeAsync(ParsedRecipeDto recipe, CancellationToken cancellationToken = default);
+    
+    Task<(bool Success, string Message, string? RecipeName)> ProcessWebhookAsync(NotionWebhookDto webhook, CancellationToken cancellationToken = default);
 }

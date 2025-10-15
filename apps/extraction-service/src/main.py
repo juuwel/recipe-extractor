@@ -5,7 +5,6 @@ from logging import getLogger
 from fastapi import FastAPI, HTTPException, Request
 from src.datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
 from src.parser.parse_website import parse_recipe
-from src.utils.auth_utils import verify_webhook_token
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -33,55 +32,3 @@ def parse_recipe_endpoint(request: RecipeRequestDto):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-
-
-@app.post("/webhook/notion")
-async def notion_webhook(request: Request):
-    """Receive webhook from Notion when database is updated"""
-
-    token = request.query_params.get("token")
-    if not verify_webhook_token(token):
-        logger.warning("Invalid webhook token received")
-        raise HTTPException(status_code=403, detail="Unauthorized")
-
-    try:
-        payload = await request.json()
-        logger.info(f"Received Notion webhook: {payload}")
-
-        # Extract page data from webhook payload
-        if payload.get("data", {}).get("object") == "page":
-            page_id = payload["data"]["id"]
-
-            # Get page properties from the webhook payload directly
-            properties = payload["data"].get("properties", {})
-
-            # Extract URL from Source property
-            source_prop = properties.get("Source", {})
-            url = source_prop.get("url") if source_prop.get("type") == "url" else None
-
-            # Extract recipe type from Tags multi_select
-            tags_prop = properties.get("Tags", {})
-            recipe_type = "Main Dish"  # default
-            if tags_prop.get("type") == "multi_select" and tags_prop.get(
-                "multi_select"
-            ):
-                recipe_type = tags_prop["multi_select"][0].get("name", "Main Dish")
-
-            logger.info(f"Extracted - URL: {url}, Recipe Type: {recipe_type}")
-
-            if url and recipe_type:
-
-                # Parse the recipe
-                recipe = parse_recipe(url, recipe_type)
-
-                # Update the same page with parsed data
-                NotionClient().update_recipe(page_id, recipe)
-
-                logger.info(f"Recipe processed and updated: {recipe.name}")
-                return {"status": "success", "recipe_name": recipe.name}
-
-        return {"status": "ignored", "message": "No action needed"}
-
-    except Exception as e:
-        logger.error(f"Webhook processing failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))

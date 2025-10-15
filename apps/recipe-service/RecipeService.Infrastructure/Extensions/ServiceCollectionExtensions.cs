@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RecipeService.Infrastructure.Clients;
 using RecipeService.Infrastructure.Options;
+using RecipeService.Infrastructure.Utils;
 
 namespace RecipeService.Infrastructure.Extensions;
 
@@ -20,6 +21,8 @@ public static class ServiceCollectionExtensions
         
         // Register Infrastructure services
         services.AddScoped<NotionClient>();
+        services.AddScoped<ExtractionServiceClient>();
+        services.AddSingleton<WebhookAuthUtils>();
         
         return services;
     }
