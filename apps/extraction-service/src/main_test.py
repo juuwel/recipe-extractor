@@ -3,14 +3,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-mock_db_client = MagicMock()
-mock_db_client.database = MagicMock()
-patcher = patch(
-    "src.infrastructure.persistence.database_client.DatabaseClient",
-    return_value=mock_db_client,
-)
-patcher.start()
-
 from src.datamodel.recipe_dtos import ParsedRecipeDto
 from src.main import app
 
