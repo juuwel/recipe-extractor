@@ -11,9 +11,15 @@ public static class RecipeApi
         var api = app
             .MapGroup("/api/v1/recipe");
 
-        api.MapPost("", CreateRecipe)
+        api.MapPost("/", CreateRecipe)
             .WithName("CreateRecipe")
             .Produces<ParsedRecipeDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        api.MapPost("/webhook", RecipeWebhook)
+            .WithName("RecipeWebhook")
+            .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
@@ -23,9 +29,17 @@ public static class RecipeApi
     public static async Task<IResult> CreateRecipe(
         [FromBody] ParsedRecipeDto parsedRecipeDto,
         [FromServices] IRecipeService recipeService
-        )
+    )
     {
         await recipeService.SaveRecipeAsync(parsedRecipeDto);
         return Results.Ok(parsedRecipeDto);
+    }
+
+    public static async Task<IResult> RecipeWebhook(
+        [FromServices] IRecipeService recipeService
+    )
+    {
+        // Handle webhook logic here
+        return Results.Ok("Webhook received");
     }
 }
