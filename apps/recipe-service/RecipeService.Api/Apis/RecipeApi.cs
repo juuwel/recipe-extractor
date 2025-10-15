@@ -23,6 +23,9 @@ public static class RecipeApi
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+        app.MapPost("", () => CreateRecipe())
+            .WithName("CreateRecipe");
+
         return api;
     }
 
