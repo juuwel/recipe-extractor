@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 from logging import getLogger
 
 from fastapi import FastAPI, HTTPException, Request
-from src.datamodel.entities import TestEntity
 from src.datamodel.recipe_dtos import ParsedRecipeDto, RecipeRequestDto
 from src.infrastructure.notion_client import NotionClient
 from src.infrastructure.persistence.database_client import DatabaseClient
@@ -42,24 +41,7 @@ def parse_recipe_endpoint(request: RecipeRequestDto):
         return recipe
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/recipe")
-def save_recipe_endpoint(recipe: ParsedRecipeDto):
-    if not recipe.ingredients or not recipe.instructions:
-        raise HTTPException(
-            status_code=400, detail="Recipe must have ingredients and instructions."
-        )
-
-    if recipe.recipe_type not in recipe_types:
-        raise HTTPException(status_code=400, detail="Invalid recipe type.")
-
-    try:
-        NotionClient().save_recipe(recipe)
-        logger.info(f"Recipe saved to Notion: {recipe.name}")
-        return {"message": f"Recipe '{recipe.name}' saved to Notion."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    
 
 
 @app.post("/webhook/notion")
