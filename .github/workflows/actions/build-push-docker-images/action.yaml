@@ -34,6 +34,9 @@ runs:
               fi
               echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
         - name: Log in to GitHub Container Registry
           uses: docker/login-action@v3
           with:
@@ -45,22 +48,32 @@ runs:
           id: sanitize
           shell: bash
           run: |
-              CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
+              CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
               echo "clean_branch=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
 
-        - name: Build and push image
-          shell: bash
-          run: |
-              docker build -t ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ${{ inputs.context-path }}
-              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ github.sha }}
-              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.sanitize.outputs.clean_branch }}
+        - name: Docker metadata
+          id: meta
+          uses: docker/metadata-action@v5
+          with:
+              images: ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}
+              tags: |
+                # Always tag with commit SHA
+                type=sha,prefix=,format=long
+                # Always tag with sanitized branch name
+                type=raw,value=${{ steps.sanitize.outputs.clean_branch }}
+                # Tag with "latest" on release branch
+                type=raw,value=latest,enable=${{ github.ref_name == 'release' }}
+                # Tag with version on release branch
+                type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.ref_name == 'release' && steps.version.outputs.version != 'latest' }}
 
-              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ github.sha }}
-              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.sanitize.outputs.clean_branch }}
-
-              if [ "${{ github.ref_name }}" = "release" ]; then
-              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:latest
-              docker tag ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }} ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.version.outputs.version }}
-              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:latest
-              docker push ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}:${{ steps.version.outputs.version }}
-              fi
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v5
+          with:
+              context: ${{ inputs.context-path }}
+              file: ${{ inputs.dockerfile-path }}
+              push: true
+              tags: ${{ steps.meta.outputs.tags }}
+              labels: ${{ steps.meta.outputs.labels }}
+              cache-from: type=gha
+              cache-to: type=gha,mode=max
+              provenance: false

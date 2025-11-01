@@ -1,0 +1,78 @@
+# Feature branch deployment values
+# Override with: helm upgrade --install recipe-<branch> ./deploy/recipe-extractor -f values-feature.yaml
+
+# Shared configuration
+doppler:
+  namespace: doppler-operator-system
+  project: recipe-parser
+  config: dev # Use dev config for feature branches
+
+imagePullSecret: github-secret
+
+tls:
+  certResolver: le
+
+ingressRoute:
+  entryPoints:
+    - websecure
+  # Host will be overridden per feature branch
+  # e.g., feature-26.recipe.buchtik.top
+  host: feature.recipe.buchtik.top
+
+# Extraction Service (Python)
+extractionService:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/juuwel/extraction-service
+    tag: latest # Override with branch-specific tag
+    pullPolicy: Always # Always pull for feature branches
+
+  service:
+    annotations: {}
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+
+  # Lower resources for feature branches
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Recipe Service (.NET)
+recipeService:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/juuwel/recipe-service
+    tag: latest # Override with branch-specific tag
+    pullPolicy: Always # Always pull for feature branches
+
+  service:
+    annotations: {}
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+
+  # Public routes exposed via ingress
+  routes:
+    - path: /api/v1/recipe
+      middlewares:
+        - basic-auth
+    - path: /api/v1/recipe/webhook
+      priority: 100
+
+  # Lower resources for feature branches
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
