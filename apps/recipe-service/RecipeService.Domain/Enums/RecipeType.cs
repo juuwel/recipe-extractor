@@ -1,3 +1,5 @@
+namespace RecipeService.Domain.Enums;
+
 public enum RecipeType
 {
     MainDish,
@@ -22,4 +24,3 @@ public static class RecipeTypeExtensions
         };
     }
 }
-

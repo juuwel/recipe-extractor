@@ -1,49 +1,26 @@
-using RecipeService.Api;
+using RecipeService.Api.Apis;
+using RecipeService.Api.Extensions;
+using RecipeService.Core.Extensions;
+using RecipeService.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOptions<NotionClientOptions>()
-    .Bind(builder.Configuration.GetSection("NotionClient"))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-builder.Services.AddHttpClient();
+// Add services to the container using extension methods
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddCore();
+builder.Services.AddApi();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+
+app.UseStatusCodePages();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+app.AddRecipeApi();
 
 app.Run();
-
-namespace RecipeService.Api
-{
-    internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-    {
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-    }
-}
