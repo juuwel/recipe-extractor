@@ -1,0 +1,75 @@
+{{- if .Values.recipeService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-recipe
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-recipe
+    component: recipe-service
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-recipe
+  replicas: {{ .Values.recipeService.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-recipe
+        component: recipe-service
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: recipe-service
+          image: {{ .Values.recipeService.image.repository }}:{{ .Values.recipeService.image.tag }}
+          imagePullPolicy: {{ .Values.recipeService.image.pullPolicy }}
+          env:
+            # Notion Configuration
+            - name: NotionClient__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: NOTION_API_KEY
+            - name: NotionClient__DatabaseId
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: NOTION_DATABASE_ID
+            - name: NotionClient__Version
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: NOTION_VERSION
+            # Webhook Configuration
+            - name: Webhook__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: WEBHOOK_SECRET_KEY
+            - name: Webhook__Salt
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: WEBHOOK_SALT
+            # Extraction Service URL (internal service communication)
+            - name: ExtractionService__BaseUrl
+              value: "http://{{ .Release.Name }}-extraction:{{ .Values.extractionService.service.port }}"
+          ports:
+            - containerPort: {{ .Values.recipeService.service.targetPort }}
+              name: http
+          resources:
+            {{- toYaml .Values.recipeService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+{{- end }}

@@ -1,0 +1,23 @@
+﻿{{- if .Values.extractionService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-extraction
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-extraction
+    component: extraction-service
+  {{- with .Values.extractionService.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  type: {{ .Values.extractionService.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.extractionService.service.port }}
+      targetPort: {{ .Values.extractionService.service.targetPort }}
+  selector:
+    app: {{ .Release.Name }}-extraction
+{{- end }}

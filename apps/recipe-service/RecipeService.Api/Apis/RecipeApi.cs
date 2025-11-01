@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecipeService.Core.Services;
 using RecipeService.Domain.DTOs;
@@ -11,7 +10,7 @@ public static class RecipeApi
     public static RouteGroupBuilder AddRecipeApi(this IEndpointRouteBuilder app)
     {
         var api = app
-            .MapGroup("/api/v1/recipe");
+            .MapGroup("/recipe");
 
         api.MapPost("/", CreateRecipe)
             .WithName("CreateRecipe")

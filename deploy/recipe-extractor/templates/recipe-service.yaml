@@ -1,0 +1,23 @@
+{{- if .Values.recipeService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-recipe
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-recipe
+    component: recipe-service
+  {{- with .Values.recipeService.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+spec:
+  type: {{ .Values.recipeService.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.recipeService.service.port }}
+      targetPort: {{ .Values.recipeService.service.targetPort }}
+  selector:
+    app: {{ .Release.Name }}-recipe
+{{- end }}
