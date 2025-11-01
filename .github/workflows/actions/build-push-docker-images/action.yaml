@@ -2,21 +2,24 @@ name: "Build and Push Docker Image"
 description: "Build and push a Docker image for a specified application."
 
 inputs:
-    app-name:
-        description: "Name of the application"
-        required: true
-    context-path:
-        description: "Build context path"
-        required: true
-    dockerfile-path:
-        description: "Path to Dockerfile"
-        required: true
-    registry-username:
-        description: "Registry username"
-        required: true
-    registry-token:
-        description: "Registry token"
-        required: true
+  app-name:
+    description: "Name of the application"
+    required: true
+  branch-name:
+    description: "Optional branch name to use for tagging (sanitized). If omitted, github.ref_name is used."
+    required: false
+  context-path:
+    description: "Build context path"
+    required: true
+  dockerfile-path:
+    description: "Path to Dockerfile"
+    required: true
+  registry-username:
+    description: "Registry username"
+    required: true
+  registry-token:
+    description: "Registry token"
+    required: true
 
 runs:
     using: "composite"
@@ -48,7 +51,13 @@ runs:
           id: sanitize
           shell: bash
           run: |
-              CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
+              if [ -n "${{ inputs.branch-name }}" ]; then
+                SOURCE_BRANCH="${{ inputs.branch-name }}"
+              else
+                SOURCE_BRANCH="${{ github.ref_name }}"
+              fi
+
+              CLEAN_BRANCH=$(echo "$SOURCE_BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
               echo "clean_branch=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
 
         - name: Docker metadata

@@ -25,7 +25,7 @@ jobs:
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     outputs:
       branch-name: ${{ steps.context.outputs.branch-name }}
-      safe-name: ${{ steps.context.outputs.safe-name }}
+      branch-prefix: ${{ steps.context.outputs.branch-prefix }}
       environment: ${{ steps.context.outputs.environment }}
       is-production: ${{ steps.context.outputs.is-production }}
     steps:
@@ -49,7 +49,13 @@ jobs:
           # - Replace non-alphanumeric chars (except hyphens) with hyphens
           # - Remove leading/trailing hyphens
           SAFE_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
-          echo "safe-name=$SAFE_NAME" >> $GITHUB_OUTPUT
+          # Extract a numeric prefix (e.g. '26' from '26-set-up-...') to use for image/chart prefixes
+          BRANCH_PREFIX=$(echo "$SAFE_NAME" | grep -o '^[0-9]\+' || true)
+          if [ -z "$BRANCH_PREFIX" ]; then
+            BRANCH_PREFIX="$SAFE_NAME"
+          fi
+
+          echo "branch-prefix=$BRANCH_PREFIX" >> $GITHUB_OUTPUT
 
           # Determine environment type
           if [ "$BRANCH" == "release" ]; then
@@ -63,8 +69,13 @@ jobs:
             echo "is-production=false" >> $GITHUB_OUTPUT
           fi
 
-          echo "📌 Branch: $BRANCH"
-          echo "✅ Safe name: $SAFE_NAME"
+      - name: Dump computed context
+        run: |
+          echo "Computed outputs:"
+          echo "branch-name=${{ steps.context.outputs.branch-name }}"
+          echo "branch-prefix=${{ steps.context.outputs.branch-prefix }}"
+          echo "environment=${{ steps.context.outputs.environment }}"
+          echo "is-production=${{ steps.context.outputs.is-production }}"
 
   build-images:
     name: Build and Push Docker Images
@@ -91,6 +102,7 @@ jobs:
           dockerfile-path: ${{ matrix.app.dockerfile }}
           registry-username: ${{ github.actor }}
           registry-token: ${{ secrets.GITHUB_TOKEN }}
+          branch-name: ${{ needs.setup.outputs.branch-prefix }}
 
   create-deployment:
     name: Create GitHub Deployment
@@ -144,7 +156,7 @@ jobs:
           # Get current chart version
           CHART_VERSION=$(grep '^version:' deploy/recipe-extractor/Chart.yaml | awk '{print $2}')
           BRANCH="${{ needs.setup.outputs.branch-name }}"
-          SAFE_NAME="${{ needs.setup.outputs.safe-name }}"
+          BRANCH_PREFIX="${{ needs.setup.outputs.branch-prefix }}"
 
           # Determine package version based on branch
           if [ "$BRANCH" == "release" ]; then
@@ -154,8 +166,8 @@ jobs:
             # Staging: append -staging
             PACKAGE_VERSION="${CHART_VERSION}-staging.${GITHUB_SHA::8}"
           else
-            # Feature: append -<safe-name>
-            PACKAGE_VERSION="${CHART_VERSION}-${SAFE_NAME}.${GITHUB_SHA::8}"
+            # Feature: append -<branch-prefix>
+            PACKAGE_VERSION="${CHART_VERSION}-${BRANCH_PREFIX}.${GITHUB_SHA::8}"
           fi
 
           echo "Packaging chart version: $PACKAGE_VERSION"
