@@ -49,8 +49,11 @@ jobs:
           # - Replace non-alphanumeric chars (except hyphens) with hyphens
           # - Remove leading/trailing hyphens
           SAFE_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
-          # Extract a numeric prefix (e.g. '26' from '26-set-up-...') to use for image/chart prefixes
-          BRANCH_PREFIX=$(echo "$SAFE_NAME" | grep -o '^[0-9]\+' || true)
+          # Use a truncated, sanitized branch name as the branch-prefix so it is stable
+          # and readable in image tags and chart versions. Cap the value to MAX_LEN
+          # characters to avoid hitting DNS/label limits.
+          MAX_LEN=20
+          BRANCH_PREFIX=$(echo "$SAFE_NAME" | cut -c1-$MAX_LEN | sed 's/-$//')
           if [ -z "$BRANCH_PREFIX" ]; then
             BRANCH_PREFIX="$SAFE_NAME"
           fi
