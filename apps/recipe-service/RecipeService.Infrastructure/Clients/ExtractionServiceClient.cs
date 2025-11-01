@@ -13,17 +13,15 @@ public class ExtractionServiceClient(
     IConfiguration configuration,
     ILogger<ExtractionServiceClient> logger)
 {
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    private readonly ILogger<ExtractionServiceClient> _logger = logger;
     private readonly string _baseUrl = configuration["ExtractionService:BaseUrl"]
-            ?? throw new InvalidOperationException("ExtractionService:BaseUrl configuration is missing");
+                                       ?? throw new InvalidOperationException("ExtractionService:BaseUrl configuration is missing");
 
     /// <summary>
     /// Parse a recipe from a URL
     /// </summary>
     public async Task<ParsedRecipeDto> ParseRecipeAsync(string url, string recipeType, CancellationToken cancellationToken = default)
     {
-        using var httpClient = _httpClientFactory.CreateClient();
+        using var httpClient = httpClientFactory.CreateClient();
 
         var request = new RecipeRequestDto
         {
@@ -31,20 +29,20 @@ public class ExtractionServiceClient(
             RecipeType = recipeType
         };
 
-        _logger.LogInformation("Calling extraction service to parse recipe from {Url}", url);
+        logger.LogInformation("Calling extraction service to parse recipe from {Url}", url);
 
         var response = await httpClient.PostAsJsonAsync($"{_baseUrl}/recipe/parse", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Extraction service failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
+            logger.LogError("Extraction service failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
             throw new HttpRequestException($"Failed to parse recipe: {response.StatusCode} - {errorContent}");
         }
 
         var parsedRecipe = await response.Content.ReadFromJsonAsync<ParsedRecipeDto>(cancellationToken)
             ?? throw new InvalidOperationException("Failed to deserialize parsed recipe response");
-        _logger.LogInformation("Successfully parsed recipe: {RecipeName}", parsedRecipe.Name);
+        logger.LogInformation("Successfully parsed recipe: {RecipeName}", parsedRecipe.Name);
 
         return parsedRecipe;
     }

@@ -4,26 +4,19 @@ using RecipeService.Domain.Exceptions;
 
 namespace RecipeService.Api.FIlters;
 
-public class GlobalExceptionHandler : IExceptionHandler
+public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    {
-        _logger = logger;
-    }
-
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         // Default values
-        int statusCode = StatusCodes.Status500InternalServerError;
-        string title = "Server error";
-        string detail = exception.Message;
-        Dictionary<string, object> additionalData = new Dictionary<string, object>();
+        var statusCode = StatusCodes.Status500InternalServerError;
+        var title = "Server error";
+        var detail = exception.Message;
+        var additionalData = new Dictionary<string, object>();
 
         if (exception is CustomException customException)
         {
-            _logger.LogError(exception, "Custom exception occurred: {Message}", exception.Message);
+            logger.LogError(exception, "Custom exception occurred: {Message}", exception.Message);
 
             switch (exception)
             {
@@ -41,7 +34,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         }
         else
         {
-            _logger.LogError(exception, "Unhandled exception occurred: {Message}", exception.Message);
+            logger.LogError(exception, "Unhandled exception occurred: {Message}", exception.Message);
         }
 
         var problemDetails = new ProblemDetails

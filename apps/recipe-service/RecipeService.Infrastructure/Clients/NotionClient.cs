@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RecipeService.Domain.Entities;
 using RecipeService.Domain.Enums;
@@ -9,7 +10,11 @@ using RecipeService.Infrastructure.Options;
 
 namespace RecipeService.Infrastructure.Clients;
 
-public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionClientOptions> notionClientOptions)
+public class NotionClient(
+    IHttpClientFactory httpClientFactory,
+    IOptions<NotionClientOptions> notionClientOptions,
+    ILogger<NotionClient> logger
+    )
 {
     private const string BaseUrl = "https://api.notion.com/v1/";
     private const string PageApiUrl = BaseUrl + "pages/";
@@ -26,10 +31,10 @@ public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionC
         AddRequestHeaders(httpClient);
 
         var blocks = recipeEntity.CreateNotionBlocks();
-        
+
         var requestBody = new
         {
-            parent = new { data_source_id = notionClientOptions.Value.DatabaseId }, // TODO: take this value from somewhere else
+            parent = new { data_source_id = notionClientOptions.Value.DatabaseId }, // TODO: take this value from request when ready
             properties = new
             {
                 Name = new { title = new[] { new { text = new { content = recipeEntity.Name } } } },
@@ -47,10 +52,7 @@ public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionC
             WriteIndented = true,
         };
 
-        // Debug: Log the JSON being sent
-        var jsonString = JsonSerializer.Serialize(requestBody, jsonOptions);
-        Console.WriteLine("Sending to Notion:");
-        Console.WriteLine(jsonString);
+        logger.LogDebug("Notion API Request Body: {JsonString}", JsonSerializer.Serialize(requestBody, jsonOptions));
 
         var response = await httpClient.PostAsJsonAsync(PageApiUrl, requestBody, jsonOptions, cancellationToken);
 
@@ -62,13 +64,13 @@ public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionC
 
         var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
         var jsonDocument = JsonDocument.Parse(responseContent);
-        
+
         // Update the entity with the returned page ID and timestamps
         if (jsonDocument.RootElement.TryGetProperty("id", out var idProperty))
         {
             recipeEntity.PageId = idProperty.GetString();
         }
-        
+
         if (jsonDocument.RootElement.TryGetProperty("created_time", out var createdTimeProperty))
         {
             if (DateTime.TryParse(createdTimeProperty.GetString(), out var createdTime))
@@ -88,11 +90,12 @@ public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionC
         return jsonDocument;
     }
 
-    public async Task<JsonDocument> UpdateRecipeEntityAsync(string pageId, RecipeNotionEntity recipeEntity, CancellationToken cancellationToken = default)
+    public async Task UpdateRecipeEntityAsync(string pageId, RecipeNotionEntity recipeEntity,
+        CancellationToken cancellationToken = default)
     {
         // First create the new recipe
         var saveResponse = await SaveRecipeEntityAsync(recipeEntity, cancellationToken);
-        
+
         if (!saveResponse.RootElement.TryGetProperty("id", out _))
         {
             throw new InvalidOperationException("Failed to save recipe before archiving old page.");
@@ -100,10 +103,9 @@ public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionC
 
         // Then archive the old page
         await ArchivePageAsync(pageId, cancellationToken);
-        return saveResponse;
     }
 
-    public async Task<JsonDocument> ArchivePageAsync(string pageId, CancellationToken cancellationToken = default)
+    private async Task ArchivePageAsync(string pageId, CancellationToken cancellationToken = default)
     {
         using var httpClient = httpClientFactory.CreateClient();
         AddRequestHeaders(httpClient);
@@ -119,7 +121,6 @@ public class NotionClient(IHttpClientFactory httpClientFactory, IOptions<NotionC
             throw new HttpRequestException($"Failed to archive page: {errorContent}");
         }
 
-        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        return JsonDocument.Parse(responseContent);
+        await response.Content.ReadAsStringAsync(cancellationToken);
     }
 }

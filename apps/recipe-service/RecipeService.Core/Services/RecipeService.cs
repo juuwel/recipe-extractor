@@ -3,11 +3,12 @@ using Microsoft.Extensions.Logging;
 using RecipeService.Domain.DTOs;
 using RecipeService.Domain.Entities;
 using RecipeService.Infrastructure.Clients;
+using RecipeService.Infrastructure.Responses;
 
 namespace RecipeService.Core.Services;
 
 public class RecipeServiceImpl(
-    NotionClient notionClient, 
+    NotionClient notionClient,
     ExtractionServiceClient extractionServiceClient,
     ILogger<RecipeServiceImpl> logger) : IRecipeService
 {
@@ -17,8 +18,8 @@ public class RecipeServiceImpl(
         return await notionClient.SaveRecipeEntityAsync(notionEntity, cancellationToken);
     }
 
-    public async Task<(bool Success, string Message, string? RecipeName)> ProcessWebhookAsync(
-        NotionWebhookDto webhook, 
+    public async Task<WebhookResponse> ProcessWebhookAsync(
+        NotionWebhookDto webhook,
         CancellationToken cancellationToken = default)
     {
         try
@@ -27,7 +28,7 @@ public class RecipeServiceImpl(
             if (webhook.Data?.Object != "page")
             {
                 logger.LogInformation("Webhook ignored: not a page object");
-                return (false, "No action needed - not a page object", null);
+                return new WebhookResponse(false, "Ignored: not a page object");
             }
 
             var pageId = webhook.Data.Id;
@@ -36,7 +37,7 @@ public class RecipeServiceImpl(
             if (string.IsNullOrWhiteSpace(pageId) || properties == null)
             {
                 logger.LogWarning("Webhook missing page ID or properties");
-                return (false, "Invalid webhook data", null);
+                return new WebhookResponse(false, "Invalid webhook data");
             }
 
             // Extract URL from Source property
@@ -44,31 +45,29 @@ public class RecipeServiceImpl(
 
             // Extract recipe type from Tags multi_select
             var recipeType = "Main Dish"; // default
-            if (properties.Tags?.Type == "multi_select" && 
-                properties.Tags.MultiSelect?.Count > 0)
+            if (properties.Tags is { Type: "multi_select", MultiSelect.Count: > 0 })
             {
                 recipeType = properties.Tags.MultiSelect[0].Name ?? "Main Dish";
             }
 
             // Check if already processed
-            var isProcessed = properties.Processed?.Type == "checkbox" && 
-                            properties.Processed.Checkbox;
+            var isProcessed = properties.Processed is { Type: "checkbox", Checkbox: true };
 
             logger.LogInformation(
-                "Webhook data - Page ID: {PageId}, URL: {Url}, Recipe Type: {RecipeType}, Processed: {IsProcessed}", 
+                "Webhook data - Page ID: {PageId}, URL: {Url}, Recipe Type: {RecipeType}, Processed: {IsProcessed}",
                 pageId, url, recipeType, isProcessed);
 
             // Skip if already processed or no URL
             if (isProcessed)
             {
                 logger.LogInformation("Recipe already processed, skipping");
-                return (false, "Recipe already processed", null);
+                return new WebhookResponse(false, "Recipe already processed");
             }
 
             if (string.IsNullOrWhiteSpace(url))
             {
                 logger.LogWarning("No URL found in webhook payload");
-                return (false, "No URL to process", null);
+                return new WebhookResponse(false, "No URL to process");
             }
 
             // Parse the recipe using extraction service
@@ -81,7 +80,7 @@ public class RecipeServiceImpl(
             await notionClient.UpdateRecipeEntityAsync(pageId, notionEntity, cancellationToken);
 
             logger.LogInformation("Recipe processed and updated successfully: {RecipeName}", parsedRecipe.Name);
-            return (true, "Recipe processed successfully", parsedRecipe.Name);
+            return new WebhookResponse(true, "Recipe processed successfully");
         }
         catch (Exception ex)
         {

@@ -1,32 +1,30 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace RecipeService.Infrastructure.Utils;
 
 /// <summary>
 /// Utility class for webhook authentication
 /// </summary>
-public class WebhookAuthUtils
+public class WebhookAuthUtils(IConfiguration configuration, ILogger<WebhookAuthUtils> logger)
 {
-    private readonly string _secretKey;
-    private readonly string _salt;
-
-    public WebhookAuthUtils(IConfiguration configuration)
-    {
-        _secretKey = configuration["Webhook:SecretKey"] 
+    private readonly string _secretKey = configuration["Webhook:SecretKey"]
             ?? throw new InvalidOperationException("Webhook:SecretKey configuration is missing");
-        _salt = configuration["Webhook:Salt"] 
+    private readonly string _salt = configuration["Webhook:Salt"]
             ?? throw new InvalidOperationException("Webhook:Salt configuration is missing");
-    }
 
     /// <summary>
     /// Verify salted HMAC webhook token
     /// </summary>
-    public bool VerifyWebhookToken(string? token)
+    public bool VerifyWebhookToken(string? token, IPAddress? ipAddress)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
+            logger.LogWarning("Invalid webhook token received from IP: {IpAddress}",
+                ipAddress);
             return false;
         }
 
@@ -35,12 +33,19 @@ public class WebhookAuthUtils
 
         // Generate expected token
         var expectedToken = GenerateHmacSha512(saltedMessage, _secretKey);
-
         // Use constant-time comparison to prevent timing attacks
-        return CryptographicOperations.FixedTimeEquals(
+        bool isValid = CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(token),
             Encoding.UTF8.GetBytes(expectedToken)
         );
+
+        if (!isValid)
+        {
+            logger.LogWarning("Invalid webhook token received from IP: {IpAddress}",
+                ipAddress);
+        }
+
+        return isValid;
     }
 
     private static string GenerateHmacSha512(string message, string key)

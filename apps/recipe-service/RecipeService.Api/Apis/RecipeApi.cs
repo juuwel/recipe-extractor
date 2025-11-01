@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecipeService.Core.Services;
 using RecipeService.Domain.DTOs;
@@ -27,30 +28,27 @@ public static class RecipeApi
         return api;
     }
 
-    public static async Task<IResult> CreateRecipe(
+    private static async Task<IResult> CreateRecipe(
         [FromBody] ParsedRecipeDto parsedRecipeDto,
         [FromServices] IRecipeService recipeService
     )
     {
         await recipeService.SaveRecipeAsync(parsedRecipeDto);
-        return Results.Ok(parsedRecipeDto);
+        return Results.Ok(parsedRecipeDto); //  TODO: Change to 201 when get by id is implemented
     }
 
-    public static async Task<IResult> RecipeWebhook(
+    private static async Task<IResult> RecipeWebhook(
         HttpContext context,
         [FromBody] NotionWebhookDto webhook,
         [FromServices] IRecipeService recipeService,
-        [FromServices] WebhookAuthUtils authUtils,
-        [FromServices] ILogger logger
+        [FromServices] WebhookAuthUtils authUtils
     )
     {
         // Verify webhook token
         var token = context.Request.Query["token"].FirstOrDefault();
-        
-        if (!authUtils.VerifyWebhookToken(token))
+
+        if (!authUtils.VerifyWebhookToken(token, context.Connection.RemoteIpAddress))
         {
-            logger.LogWarning("Invalid webhook token received from IP: {IpAddress}", 
-                context.Connection.RemoteIpAddress);
             return Results.Problem(
                 statusCode: StatusCodes.Status403Forbidden,
                 title: "Unauthorized",
@@ -58,16 +56,15 @@ public static class RecipeApi
             );
         }
 
-        logger.LogInformation("Received valid Notion webhook");
-
         // Process the webhook
-        var (success, message, recipeName) = await recipeService.ProcessWebhookAsync(webhook);
+        var webhookResponse = await recipeService.ProcessWebhookAsync(webhook);
 
-        if (success)
-        {
-            return Results.Ok(new { status = "success", recipe_name = recipeName });
-        }
-
-        return Results.Ok(new { status = "ignored", message });
+        return webhookResponse.Success
+            ? Results.Ok()
+            : Results.Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Webhook Processing Failed",
+                detail: webhookResponse.Message
+            );
     }
 }
