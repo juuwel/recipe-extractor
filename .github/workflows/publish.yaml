@@ -44,8 +44,11 @@ jobs:
 
           echo "branch-name=$BRANCH" >> $GITHUB_OUTPUT
 
-          # Sanitize branch name
-          SAFE_NAME=$(make sanitize-branch-name BRANCH="$BRANCH")
+          # Sanitize branch name for Kubernetes/Docker/DNS compatibility
+          # - Convert to lowercase
+          # - Replace non-alphanumeric chars (except hyphens) with hyphens
+          # - Remove leading/trailing hyphens
+          SAFE_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
           echo "safe-name=$SAFE_NAME" >> $GITHUB_OUTPUT
 
           # Determine environment type
