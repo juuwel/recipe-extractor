@@ -2,7 +2,6 @@
 
 import pytest
 from fastapi.testclient import TestClient
-
 from src.datamodel.recipe_dtos import ParsedRecipeDto
 from src.main import app
 
@@ -59,7 +58,7 @@ expected_results = [
             "▢ 2 cups baby spinach, sliced into ribbons",
         ],
         instructions=[
-            "In a large pan, heat the oil over medium-high heat. Add the onion and sautÃ© for 5 minutes.  Add the garlic and curry paste and stir, cooking for 1-2 minutes.",
+            "In a large pan, heat the oil over medium-high heat. Add the onion and sauté for 5 minutes.  Add the garlic and curry paste and stir, cooking for 1-2 minutes.",
             "Pour in the crushed tomatoes, coconut milk and chickpeas. Bring to a boil, then simmer for about 10 minutes, stirring occasionally. Stir in the lime juice, sugar, salt to taste and spinach. Cook for a minute until the spinach has wilted.",
             "Serve with rice and/orEasy Vegan Naan. Sprinkle with chopped cilantro and serve with lime wedges. Enjoy!",
         ],
