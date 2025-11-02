@@ -28,7 +28,7 @@ runs:
 
               if [ "$BRANCH_PREFIX" = "release" ]; then
                 PACKAGE_VERSION="$CHART_VERSION"
-              elif [ "$BRANCH" = "main" ]; then
+              elif [ "$BRANCH_PREFIX" = "main" ]; then
                 PACKAGE_VERSION="${CHART_VERSION}-staging.${GITHUB_SHA::8}"
               else
                 PACKAGE_VERSION="${CHART_VERSION}-${BRANCH_PREFIX}.${GITHUB_SHA::8}"
