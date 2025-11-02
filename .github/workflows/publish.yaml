@@ -167,10 +167,10 @@ jobs:
             PACKAGE_VERSION="$CHART_VERSION"
           elif [ "$BRANCH" == "main" ]; then
             # Staging: append -staging
-            PACKAGE_VERSION="${CHART_VERSION}-staging"
+            PACKAGE_VERSION="${CHART_VERSION}-staging.${GITHUB_SHA::8}"
           else
             # Feature: append -<branch-prefix>
-            PACKAGE_VERSION="${CHART_VERSION}-${BRANCH_PREFIX}"
+            PACKAGE_VERSION="${CHART_VERSION}-${BRANCH_PREFIX}.${GITHUB_SHA::8}"
           fi
 
           echo "Packaging chart version: $PACKAGE_VERSION"
