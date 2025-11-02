@@ -12,7 +12,6 @@ on:
 permissions:
   packages: write
   contents: write
-  deployments: write
 
 jobs:
   setup:
@@ -32,56 +31,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Determine deployment context
-        id: context
-        run: |
-          # Determine branch name
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            BRANCH="${{ github.head_ref }}"
-          else
-            BRANCH="${{ github.ref_name }}"
-          fi
+      - id: context
+        name: Compute deployment context
+        uses: ./.github/actions/get-deployment-context
+        with:
+          ref: ${{ github.ref_name }}
 
-          echo "branch-name=$BRANCH" >> $GITHUB_OUTPUT
-
-          # Sanitize branch name for Kubernetes/Docker/DNS compatibility
-          # - Convert to lowercase
-          # - Replace non-alphanumeric chars (except hyphens) with hyphens
-          # - Remove leading/trailing hyphens
-          SAFE_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
-          # Use a truncated, sanitized branch name as the branch-prefix so it is stable
-          # and readable in image tags and chart versions. Cap the value to MAX_LEN
-          # characters to avoid hitting DNS/label limits.
-          MAX_LEN=20
-          BRANCH_PREFIX=$(echo "$SAFE_NAME" | cut -c1-$MAX_LEN | sed 's/-$//')
-          if [ -z "$BRANCH_PREFIX" ]; then
-            BRANCH_PREFIX="$SAFE_NAME"
-          fi
-
-          echo "branch-prefix=$BRANCH_PREFIX" >> $GITHUB_OUTPUT
-
-          # Determine environment type
-          if [ "$BRANCH" == "release" ]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-            echo "is-production=true" >> $GITHUB_OUTPUT
-          elif [ "$BRANCH" == "main" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-            echo "is-production=false" >> $GITHUB_OUTPUT
-          else
-            echo "environment=feature-$SAFE_NAME" >> $GITHUB_OUTPUT
-            echo "is-production=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Dump computed context
-        run: |
-          echo "Computed outputs:"
-          echo "branch-name=${{ steps.context.outputs.branch-name }}"
-          echo "branch-prefix=${{ steps.context.outputs.branch-prefix }}"
-          echo "environment=${{ steps.context.outputs.environment }}"
-          echo "is-production=${{ steps.context.outputs.is-production }}"
-
-  build-images:
-    name: Build and Push Docker Images
+  publish-images:
+    name: Build and Publish Docker Images
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -107,138 +64,17 @@ jobs:
           registry-token: ${{ secrets.GITHUB_TOKEN }}
           branch-name: ${{ needs.setup.outputs.branch-prefix }}
 
-  create-deployment:
-    name: Create GitHub Deployment
-    needs: [setup, build-images]
-    runs-on: ubuntu-latest
-    outputs:
-      deployment-id: ${{ steps.deployment.outputs.result }}
-    steps:
-      - name: Create GitHub Deployment
-        id: deployment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-              environment: '${{ needs.setup.outputs.environment }}',
-              description: 'Deploy ${{ needs.setup.outputs.branch-name }}',
-              auto_merge: false,
-              required_contexts: [],
-              transient_environment: ${{ needs.setup.outputs.is-production == 'false' }},
-              production_environment: ${{ needs.setup.outputs.is-production }}
-            });
-
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: deployment.data.id,
-              state: 'in_progress',
-              description: 'Building and publishing images...'
-            });
-
-            return deployment.data.id;
-
   publish-chart:
     name: Publish Helm Chart
+    needs: [setup, publish-images]
     runs-on: ubuntu-latest
-    needs: [setup, build-images, create-deployment]
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Package and publish Helm chart
+        uses: ./.github/workflows/actions/build-push-helm-chart
         with:
-          fetch-depth: 0
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-
-      - name: Package Helm Chart
-        run: |
-          # Get current chart version
-          CHART_VERSION=$(grep '^version:' deploy/recipe-extractor/Chart.yaml | awk '{print $2}')
-          BRANCH="${{ needs.setup.outputs.branch-name }}"
-          BRANCH_PREFIX="${{ needs.setup.outputs.branch-prefix }}"
-
-          # Determine package version based on branch
-          if [ "$BRANCH" == "release" ]; then
-            # Production: use chart version as-is
-            PACKAGE_VERSION="$CHART_VERSION"
-          elif [ "$BRANCH" == "main" ]; then
-            # Staging: append -staging
-            PACKAGE_VERSION="${CHART_VERSION}-staging.${GITHUB_SHA::8}"
-          else
-            # Feature: append -<branch-prefix>
-            PACKAGE_VERSION="${CHART_VERSION}-${BRANCH_PREFIX}.${GITHUB_SHA::8}"
-          fi
-
-          echo "Packaging chart version: $PACKAGE_VERSION"
-
-          # Update chart version temporarily
-          sed -i "s/^version:.*/version: $PACKAGE_VERSION/" deploy/recipe-extractor/Chart.yaml
-
-          # Package the chart
-          helm package deploy/recipe-extractor -d .helm-packages
-
-          echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push Helm Chart to OCI Registry
-        run: |
-          CHART_PACKAGE=$(ls .helm-packages/*.tgz)
-
-          # Push to GHCR as OCI artifact
-          helm push "$CHART_PACKAGE" oci://ghcr.io/${{ github.repository_owner }}/charts
-
-          echo "Chart pushed to oci://ghcr.io/${{ github.repository_owner }}/charts"
-
-      - name: Create GitHub Release for Production Chart
-        if: needs.setup.outputs.is-production == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const chartPackage = fs.readdirSync('.helm-packages')[0];
-            const chartVersion = chartPackage.replace('recipe-extractor-', '').replace('.tgz', '');
-
-            try {
-              await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag_name: `chart-v${chartVersion}`,
-                name: `Helm Chart v${chartVersion}`,
-                body: `Helm Chart release for version ${chartVersion}\n\nInstall with:\n\`\`\`bash\nhelm install recipe-extractor oci://ghcr.io/${{ github.repository_owner }}/charts/recipe-extractor --version ${chartVersion}\n\`\`\``,
-                draft: false,
-                prerelease: false
-              });
-            } catch (error) {
-              console.log('Release may already exist:', error.message);
-            }
-
-  update-deployment-status:
-    name: Update Deployment Status
-    runs-on: ubuntu-latest
-    needs: [setup, create-deployment, publish-chart]
-    if: always() && needs.create-deployment.outputs.deployment-id
-    steps:
-      - name: Set deployment status
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const wasSuccessful = '${{ needs.publish-chart.result }}' !== 'failure';
-
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ needs.create-deployment.outputs.deployment-id }},
-              state: wasSuccessful ? 'success' : 'failure',
-              description: wasSuccessful ? 'Deployment completed' : 'Deployment failed',
-              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
-            });
+          chart-path: deploy/recipe-extractor
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          branch-name: ${{ needs.setup.outputs.branch-name }}
