@@ -5,9 +5,9 @@ inputs:
   app-name:
     description: "Name of the application"
     required: true
-  branch-name:
-    description: "Optional branch name to use for tagging (sanitized). If omitted, github.ref_name is used."
-    required: false
+  branch-prefix:
+    description: "Branch prefix for tagging"
+    required: true
   context-path:
     description: "Build context path"
     required: true
@@ -22,67 +22,54 @@ inputs:
     required: true
 
 runs:
-    using: "composite"
-    steps:
-        - name: Extract version
-          id: version
-          shell: bash
-          run: |
-              if [ -f "${{ inputs.context-path }}/pyproject.toml" ]; then
-                VERSION=$(grep -E '^\s*version\s*=' ${{ inputs.context-path }}/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
-              elif [ -f "${{ inputs.context-path }}"/*.csproj ]; then
-                VERSION=$(grep -oP '(?<=<Version>)[^<]+' "${{ inputs.context-path }}"/*.csproj | head -1)
-              else
-                VERSION="latest"
-              fi
-              echo "version=$VERSION" >> $GITHUB_OUTPUT
+  using: "composite"
+  steps:
+    - name: Extract version
+      id: version
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.context-path }}/pyproject.toml" ]; then
+          VERSION=$(grep -E '^\s*version\s*=' ${{ inputs.context-path }}/pyproject.toml | head -1 | sed -E 's/^\s*version\s*=\s*\"([^\"]+)\"/\1/')
+        elif [ -f "${{ inputs.context-path }}"/*.csproj ]; then
+          VERSION=$(grep -oP '(?<=<Version>)[^<]+' "${{ inputs.context-path }}"/*.csproj | head -1)
+        else
+          VERSION="latest"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-              registry: ghcr.io
-              username: ${{ inputs.registry-username }}
-              password: ${{ inputs.registry-token }}
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-token }}
 
-        - name: Sanitize branch name
-          id: sanitize
-          shell: bash
-          run: |
-              if [ -n "${{ inputs.branch-name }}" ]; then
-                SOURCE_BRANCH="${{ inputs.branch-name }}"
-              else
-                SOURCE_BRANCH="${{ github.ref_name }}"
-              fi
+    - name: Docker metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}
+        tags: |
+          # Always tag with commit SHA
+          type=sha,prefix=,format=long
+          # Always tag with sanitized branch name
+          type=raw,value=${{ inputs.branch-prefix }}
+          # Tag with "latest" on release branch
+          type=raw,value=latest,enable=${{ github.ref_name == 'release' }}
+          # Tag with version on release branch
+          type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.ref_name == 'release' && steps.version.outputs.version != 'latest' }}
 
-              CLEAN_BRANCH=$(echo "$SOURCE_BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
-              echo "clean_branch=$CLEAN_BRANCH" >> $GITHUB_OUTPUT
-
-        - name: Docker metadata
-          id: meta
-          uses: docker/metadata-action@v5
-          with:
-              images: ghcr.io/${{ inputs.registry-username }}/${{ inputs.app-name }}
-              tags: |
-                # Always tag with commit SHA
-                type=sha,prefix=,format=long
-                # Always tag with sanitized branch name
-                type=raw,value=${{ steps.sanitize.outputs.clean_branch }}
-                # Tag with "latest" on release branch
-                type=raw,value=latest,enable=${{ github.ref_name == 'release' }}
-                # Tag with version on release branch
-                type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.ref_name == 'release' && steps.version.outputs.version != 'latest' }}
-
-        - name: Build and push Docker image
-          uses: docker/build-push-action@v5
-          with:
-              context: ${{ inputs.context-path }}
-              file: ${{ inputs.dockerfile-path }}
-              push: true
-              tags: ${{ steps.meta.outputs.tags }}
-              labels: ${{ steps.meta.outputs.labels }}
-              cache-from: type=gha
-              cache-to: type=gha,mode=max
-              provenance: false
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ inputs.context-path }}
+        file: ${{ inputs.dockerfile-path }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        provenance: false

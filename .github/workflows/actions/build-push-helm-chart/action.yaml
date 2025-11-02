@@ -4,8 +4,8 @@ inputs:
     chart-path:
         description: "Path to the Helm chart (example: deploy/recipe-extractor)"
         required: true
-    branch-name:
-        description: "Branch name (optional). If empty the action will use the current ref."
+    branch-prefix:
+        description: "Branch prefix to compute package version from"
         required: true
     registry-token:
         description: "Token used by chart-releaser (usually GITHUB_TOKEN)"
@@ -21,15 +21,12 @@ runs:
           run: |
               set -euo pipefail
               CHART_PATH="${{ inputs.chart-path }}"
-              BRANCH="${{ inputs.branch-name }}"
-
-              SAFE_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
-              BRANCH_PREFIX=$(echo "$SAFE_NAME" | cut -c1-20 | sed 's/-$//')
+              BRANCH_PREFIX="${{ inputs.branch-prefix }}"
 
               # read declared Chart.yaml version
               CHART_VERSION=$(grep '^version:' "$CHART_PATH/Chart.yaml" | awk '{print $2}')
 
-              if [ "$BRANCH" = "release" ]; then
+              if [ "$BRANCH_PREFIX" = "release" ]; then
                 PACKAGE_VERSION="$CHART_VERSION"
               elif [ "$BRANCH" = "main" ]; then
                 PACKAGE_VERSION="${CHART_VERSION}-staging.${GITHUB_SHA::8}"
