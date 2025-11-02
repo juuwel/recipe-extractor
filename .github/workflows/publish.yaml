@@ -34,7 +34,7 @@ jobs:
         name: Compute deployment context
         uses: ./.github/workflows/actions/get-deployment-context
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.inputs.ref || github.ref_name || github.ref }}
 
   publish-images:
     name: Build and Publish Docker Images
@@ -101,7 +101,7 @@ jobs:
 
       - name: Make deploy script executable
         run: |
-          chmod +x ./deploy-feature.sh
+          chmod +x ./scripts/deploy-feature.sh
 
       - name: Deploy Helm chart to cluster
         env:
@@ -109,4 +109,4 @@ jobs:
         run: |
           IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
           CHART_VERSION="${{ github.event.inputs.chart_version || 'latest' }}"
-          ./deploy-feature.sh "$IMAGE_TAG" "$CHART_VERSION"
+          ./scripts/deploy-feature.sh "$IMAGE_TAG" "$CHART_VERSION"
