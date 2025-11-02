@@ -217,10 +217,30 @@
 			"id": "29107717-fc473c41-87b9-438b-b43b-19d6fc2ce0b6"
 		}
 	],
-	"variable": [
+	"event": [
 		{
-			"key": "baseUrl",
-			"value": "http://localhost:5115/"
+			"listen": "prerequest",
+			"script": {
+				"id": "54267d6e-4741-42cc-9750-3eac44cca90f",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "ba561a2c-535e-4fac-8444-da55591f2858",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }
