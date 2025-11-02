@@ -1,4 +1,4 @@
-﻿name: Publish Docker Images and Helm Charts
+﻿name: Deploy Recipe Extractor Application
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
 
       - id: context
         name: Compute deployment context
-        uses: ./.github/actions/get-deployment-context
+        uses: ./.github/workflows/actions/get-deployment-context
         with:
           ref: ${{ github.ref_name }}
 
