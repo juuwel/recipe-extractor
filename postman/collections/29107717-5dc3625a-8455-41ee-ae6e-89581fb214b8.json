@@ -1,0 +1,226 @@
+{
+	"info": {
+		"_postman_id": "29107717-5dc3625a-8455-41ee-ae6e-89581fb214b8",
+		"name": "RecipeService.Api | v1",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "recipe",
+							"item": [
+								{
+									"name": "Create Recipe",
+									"id": "29107717-d48a1bfb-c3dc-48b1-9c4e-a6b2e43c59df",
+									"protocolProfileBehavior": {
+										"disableBodyPruning": true
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"dataSourceId\": \"\",\n    \"website\": \"https://poshjournal.com/carrot-and-lentil-soup\",\n    \"name\": \"Carrot and Lentil Soup (High in protein!)\",\n    \"ingredients\": [\n        \"▢ 1½ cups diced carrots\",\n        \"▢ 2 cups split red lentils , (washed)\",\n        \"▢ 3 tablespoon olive oil\",\n        \"▢ 1½ cups chopped onion\",\n        \"▢ 2 tablespoon minced garlic\",\n        \"▢ 2 tablespoon tomato paste\",\n        \"▢ ½ teaspoon ground turmeric\",\n        \"▢ 1 teaspoon ground cumin\",\n        \"▢ 1 teaspoon ground cinnamon\",\n        \"▢ ½ teaspoon ground paprika (sweet or smoked)\",\n        \"▢ ⅛ teaspoon cayenne pepper\",\n        \"▢ 4 cups broth\",\n        \"▢ 2 cups water\",\n        \"▢ salt and pepper to taste\"\n    ],\n    \"instructions\": [\n        \"Heat oil in a heavy large saucepan over medium-high heat. Cook onion, garlic until tender for about 4-5 minutes. Be sure to keep stirring to prevent burning.\",\n        \"Add tomato paste, cumin, turmeric, cinnamon, paprika and cayenne pepper. Be sure to keep stirring to prevent burning (for about 1 minute).\",\n        \"Add broth. Be sure to scrape the bottom, add carrots, lentils, water and bring to a simmer.\",\n        \"Reduce to low heat, cover the pot partially and cook for about 15-20 minutes or until the lentils are soft. Stir frequently to prevent burning. Turn off the heat when the lentils are fully cooked.\",\n        \"Use a hand blender or any high-speed blender, puree the lentils until smooth, adjust the seasoning with salt and pepper.\",\n        \"If the broth is too thick, add about ¼ cup of extra broth. Ladle soup into bowls. Garnish with parsley, serve and enjoy.\"\n    ],\n    \"recipeType\": 4\n}",
+											"options": {
+												"raw": {
+													"headerFamily": "json",
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/recipe",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"recipe"
+											]
+										}
+									},
+									"response": [
+										{
+											"id": "29107717-ce5d6c26-ad2f-4254-97d0-f2259d70acdd",
+											"name": "OK",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Content-Type",
+														"value": "application/json"
+													},
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"website\": \"string\",\n  \"name\": \"string\",\n  \"ingredients\": [\n    \"string\",\n    \"string\"\n  ],\n  \"instructions\": [\n    \"string\",\n    \"string\"\n  ],\n  \"recipeType\": 6361\n}",
+													"options": {
+														"raw": {
+															"headerFamily": "json",
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/recipe",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"recipe"
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"responseTime": null,
+											"body": "{\n  \"website\": \"string\",\n  \"name\": \"string\",\n  \"ingredients\": [\n    \"string\",\n    \"string\"\n  ],\n  \"instructions\": [\n    \"string\",\n    \"string\"\n  ],\n  \"recipeType\": 6361\n}"
+										},
+										{
+											"id": "29107717-b7b73977-e968-4264-a94d-bba52cc1bc76",
+											"name": "Bad Request",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Content-Type",
+														"value": "application/json"
+													},
+													{
+														"key": "Accept",
+														"value": "application/problem+json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"website\": \"string\",\n  \"name\": \"string\",\n  \"ingredients\": [\n    \"string\",\n    \"string\"\n  ],\n  \"instructions\": [\n    \"string\",\n    \"string\"\n  ],\n  \"recipeType\": 6361\n}",
+													"options": {
+														"raw": {
+															"headerFamily": "json",
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/recipe",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"recipe"
+													]
+												}
+											},
+											"status": "Bad Request",
+											"code": 400,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/problem+json"
+												}
+											],
+											"cookie": [],
+											"responseTime": null,
+											"body": "{\n  \"type\": \"string\",\n  \"title\": \"string\",\n  \"status\": 2235,\n  \"detail\": \"string\",\n  \"instance\": \"string\"\n}"
+										},
+										{
+											"id": "29107717-fdebf180-c39d-45d5-a879-cdda6beb4f31",
+											"name": "Internal Server Error",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Content-Type",
+														"value": "application/json"
+													},
+													{
+														"key": "Accept",
+														"value": "application/problem+json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"website\": \"string\",\n  \"name\": \"string\",\n  \"ingredients\": [\n    \"string\",\n    \"string\"\n  ],\n  \"instructions\": [\n    \"string\",\n    \"string\"\n  ],\n  \"recipeType\": 6361\n}",
+													"options": {
+														"raw": {
+															"headerFamily": "json",
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/recipe",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"recipe"
+													]
+												}
+											},
+											"status": "Internal Server Error",
+											"code": 500,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/problem+json"
+												}
+											],
+											"cookie": [],
+											"responseTime": null,
+											"body": "{\n  \"type\": \"string\",\n  \"title\": \"string\",\n  \"status\": 2235,\n  \"detail\": \"string\",\n  \"instance\": \"string\"\n}"
+										}
+									]
+								}
+							],
+							"id": "29107717-6d7ef4be-7bbf-41e2-8555-70ec17a7cc97"
+						}
+					],
+					"id": "29107717-778a7f95-a334-4d18-bfe9-0610e9aa4f42"
+				}
+			],
+			"id": "29107717-fc473c41-87b9-438b-b43b-19d6fc2ce0b6"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5115/"
+		}
+	]
+}
