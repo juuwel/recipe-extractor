@@ -2,6 +2,20 @@ apiVersion: v1
 entries:
   recipe-extractor:
   - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2025-11-03T21:25:38.400633396Z"
+    description: A Helm chart for deploying the Recipe Parser application (Extraction
+      Service + Recipe Service)
+    digest: 4bb49c4b1de1d3b5c0636de8e758be17c3a394186672bbfc1cf1b4f4677a4d4e
+    home: https://github.com/juuwel/recipe-extractor
+    maintainers:
+    - name: juuwel
+    name: recipe-extractor
+    type: application
+    urls:
+    - https://github.com/juuwel/recipe-extractor/releases/download/recipe-extractor-2.0.0/recipe-extractor-2.0.0.tgz
+    version: 2.0.0
+  - apiVersion: v2
     appVersion: 0.1.1
     created: "2025-10-04T14:32:09.406502331Z"
     description: A Helm chart for deploying the Recipe Extractor application
@@ -23,4 +37,4 @@ entries:
     urls:
     - https://github.com/juuwel/recipe-extractor/releases/download/recipe-extractor-0.1.0/recipe-extractor-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-04T14:32:09.406510567Z"
+generated: "2025-11-03T21:25:38.400640159Z"
