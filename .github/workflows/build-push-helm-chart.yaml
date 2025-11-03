@@ -54,7 +54,7 @@ jobs:
           fi
 
           echo "Packaging chart version: $PACKAGE_VERSION"
-          helm package "$CHART_PATH" --version "$PACKAGE_VERSION" --app-version "$PACKAGE_VERSION" --destination deploy
+          helm package "$CHART_PATH" --version "$PACKAGE_VERSION" --app-version "$PACKAGE_VERSION" .cr-release-packages
 
           echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
@@ -62,6 +62,6 @@ jobs:
         uses: helm/chart-releaser-action@v1.7.0
         with:
           charts_dir: deploy
-#          skip_packaging: true
+          skip_packaging: true
         env:
           CR_TOKEN: "${{ secrets.registry-token }}"
