@@ -24,6 +24,9 @@ jobs:
   publish-helm-chart:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
       - name: Install Helm
         uses: azure/setup-helm@v4
 

@@ -47,7 +47,6 @@ jobs:
   publish-images:
     name: Build and Publish Docker Images
     needs: setup
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         app:
@@ -57,34 +56,25 @@ jobs:
           - name: recipe-service
             context: apps/recipe-service
             dockerfile: apps/recipe-service/RecipeService.Api/Dockerfile
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Build and push ${{ matrix.app.name }}
-        uses: ./.github/workflows/build-push-docker-images.yaml
-        with:
-          app-name: ${{ matrix.app.name }}
-          context-path: ${{ matrix.app.context }}
-          dockerfile-path: ${{ matrix.app.dockerfile }}
-          registry-username: ${{ github.actor }}
-          registry-token: ${{ secrets.GITHUB_TOKEN }}
-          branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
+    uses: ./.github/workflows/build-push-docker-images.yaml
+    with:
+      app-name: ${{ matrix.app.name }}
+      context-path: ${{ matrix.app.context }}
+      dockerfile-path: ${{ matrix.app.dockerfile }}
+      registry-username: ${{ github.actor }}
+      branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
+    secrets:
+      registry-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-chart:
     name: Publish Helm Chart
     needs: [setup, publish-images]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Package and publish Helm chart
-        uses: ./.github/workflows/build-push-helm-chart.yaml
-        with:
-          chart-path: deploy/recipe-extractor
-          registry-token: ${{ secrets.GITHUB_TOKEN }}
-          branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
+    uses: ./.github/workflows/build-push-helm-chart.yaml
+    with:
+      chart-path: deploy/recipe-extractor
+      branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
+    secrets:
+      registry-token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     name: Deploy to Kubernetes Cluster
