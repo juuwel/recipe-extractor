@@ -54,7 +54,7 @@ runs:
         echo "is-production=$IS_PROD" >> $GITHUB_OUTPUT
 
         echo "Computed outputs:"
-        echo "  branch-name=${BRANCH}"
-        echo "  branch-prefix=${BRANCH_PREFIX}"
-        echo "  environment=${ENV}"
-        echo "  is-production=${IS_PROD}"
+        echo "branch-name=${BRANCH}"
+        echo "branch-prefix=${BRANCH_PREFIX}"
+        echo "environment=${ENV}"
+        echo "is-production=${IS_PROD}"
