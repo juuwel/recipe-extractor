@@ -48,17 +48,9 @@ jobs:
           fi
 
           echo "Packaging chart version: $PACKAGE_VERSION"
-          # package without modifying Chart.yaml by using helm's --version override
-          mkdir -p .helm-packages charts
-          helm package "$CHART_PATH" --version "$PACKAGE_VERSION" -d .helm-packages
-          CHART_PKG=$(ls .helm-packages/*.tgz | head -n1)
-
-          # move packaged chart into `charts/` so chart-releaser can find it
-          mv "$CHART_PKG" charts/
-          CHART_PKG_IN_CHARTS="charts/$(basename "$CHART_PKG")"
+          helm package "$CHART_PATH" --version "$PACKAGE_VERSION" --app-version "$PACKAGE_VERSION" --destination deploy
 
           echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-          echo "chart-package=$CHART_PKG_IN_CHARTS" >> $GITHUB_OUTPUT
 
       - name: Configure Git
         shell: bash
@@ -68,5 +60,8 @@ jobs:
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
+        with:
+          charts_dir: 'deploy'
+          skip_packaging: true
         env:
           CR_TOKEN: "${{ secrets.registry-token }}"
