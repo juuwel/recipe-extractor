@@ -75,36 +75,3 @@ jobs:
       branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
     secrets:
       registry-token: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    name: Deploy to Kubernetes Cluster
-    needs: [setup, publish-chart]
-    runs-on: ubuntu-latest
-    env:
-      KUBECONFIG_PATH: ${{ github.workspace }}/kubeconfig
-    if: needs.setup.outputs.environment != 'none'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Restore kubeconfig
-        env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
-        run: |
-          echo "$KUBECONFIG_DATA" | base64 --decode > "$KUBECONFIG_PATH"
-          echo "kubeconfig written to $KUBECONFIG_PATH"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-
-      - name: Make deploy script executable
-        run: |
-          chmod +x ./scripts/deploy-feature.sh
-
-      - name: Deploy Helm chart to cluster
-        env:
-          KUBECONFIG: ${{ env.KUBECONFIG_PATH }}
-        run: |
-          IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
-          CHART_VERSION="${{ github.event.inputs.chart_version || 'latest' }}"
-          ./scripts/deploy-feature.sh "$IMAGE_TAG" "$CHART_VERSION"
