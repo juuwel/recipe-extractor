@@ -48,14 +48,17 @@ jobs:
           fi
 
           echo "Packaging chart version: $PACKAGE_VERSION"
-          # update version in Chart.yaml (temporary)
-          sed -i "s/^version:.*/version: $PACKAGE_VERSION/" "$CHART_PATH/Chart.yaml"
-          mkdir -p .helm-packages
-          helm package "$CHART_PATH" -d .helm-packages
+          # package without modifying Chart.yaml by using helm's --version override
+          mkdir -p .helm-packages charts
+          helm package "$CHART_PATH" --version "$PACKAGE_VERSION" -d .helm-packages
           CHART_PKG=$(ls .helm-packages/*.tgz | head -n1)
 
+          # move packaged chart into `charts/` so chart-releaser can find it
+          mv "$CHART_PKG" charts/
+          CHART_PKG_IN_CHARTS="charts/$(basename "$CHART_PKG")"
+
           echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-          echo "chart-package=$CHART_PKG" >> $GITHUB_OUTPUT
+          echo "chart-package=$CHART_PKG_IN_CHARTS" >> $GITHUB_OUTPUT
 
       - name: Configure Git
         shell: bash
