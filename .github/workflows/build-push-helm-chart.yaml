@@ -37,7 +37,6 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Package Helm Chart
-        shell: bash
         run: |
           set -euo pipefail
           CHART_PATH="${{ inputs.chart-path }}"
@@ -59,16 +58,10 @@ jobs:
 
           echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Configure Git
-        shell: bash
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
         with:
           charts_dir: deploy
-          skip_packaging: true
+#          skip_packaging: true
         env:
           CR_TOKEN: "${{ secrets.registry-token }}"
