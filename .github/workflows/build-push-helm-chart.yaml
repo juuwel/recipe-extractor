@@ -18,7 +18,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
 
 jobs:
   publish-helm-chart:
