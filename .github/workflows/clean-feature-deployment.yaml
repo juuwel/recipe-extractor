@@ -1,0 +1,57 @@
+name: Clean up Feature Deployment
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+  setup:
+    name: Setup Deployment Context
+    runs-on: ubuntu-latest
+    outputs:
+      branch-prefix: ${{ steps.context.outputs.branch-prefix }}
+      environment: ${{ steps.context.outputs.environment }}
+      is-production: ${{ steps.context.outputs.is-production }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - id: context
+        name: Compute deployment context
+        uses: ./.github/workflows/actions/get-deployment-context
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref_name || github.ref }}
+
+  unpublish-images:
+    name: Unpublish Feature Deployment Images
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Delete Docker images from GitHub Container Registry
+        uses: smartsquaregmbh/delete-old-packages@v0.8.1
+        with:
+          type: docker
+          names: |
+            ghcr.io/${{ github.repository_owner }}/extraction-service
+            ghcr.io/${{ github.repository_owner }}/recipe-service
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version-pattern: "^${{ needs.setup.outputs.branch-prefix }}.*"
+          dry-run: true
+
+  unpublish-chart:
+    name: Unpublish Feature Deployment Helm Chart
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5

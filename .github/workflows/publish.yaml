@@ -36,14 +36,6 @@ jobs:
         with:
           ref: ${{ github.event.inputs.ref || github.ref_name || github.ref }}
 
-      - id: print
-        name: Print deployment context
-        run: |
-          echo "Deployment Context:"
-          echo "Branch Prefix: ${{ steps.context.outputs.branch-prefix }}"
-          echo "Environment: ${{ steps.context.outputs.environment }}"
-          echo "Is Production: ${{ steps.context.outputs.is-production }}"
-
   publish-images:
     name: Build and Publish Docker Images
     needs: setup
