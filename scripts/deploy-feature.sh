@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
-# Deploy a prerelease Helm chart + images for recipe-extractor.
-# Usage: ./scripts/deploy-prerelease.sh <chart-version> [host-subdomain]
-# Example: ./scripts/deploy-prerelease.sh 2.0.0-feat-x.abc123 feat-x
+# Deploy a feature Helm chart + images for recipe-extractor.
+# Usage: ./scripts/deploy-feature.sh <image-tag> <chart-version>
+# Example: ./scripts/deploy-feature.sh 26-set-up-deployment 2.0.0-26-set-up-deployment.4ed6df6d
 set -euo pipefail
-
-# ...existing code...
-#!/usr/bin/env bash
-# Example snippet to replace the part that determines chart version / release name.
 
 IMAGE_TAG="$1" # e.g. "26-set-up-deployment"
 CHART_VERSION="$2"  # e.g. "2.0.0-26-set-up-deployment.4ed6df6d"

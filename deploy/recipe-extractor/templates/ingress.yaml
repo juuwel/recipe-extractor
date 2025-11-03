@@ -22,7 +22,7 @@ spec:
         {{- if .middlewares }}
         middlewares:
           {{- range .middlewares }}
-          - name: {{ . }}
+          - name: {{ $.Release.Name }}-{{ . }}
           {{- end }}
         {{- end }}
       {{- end }}
