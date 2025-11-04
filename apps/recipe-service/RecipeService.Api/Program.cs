@@ -21,6 +21,9 @@ if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.UseHttpsRedirection();
 
-app.AddRecipeApi();
+var apiV1 = app.MapGroup("/api/v1");
+apiV1.AddRecipeApi();
+
+app.MapHealthChecks("/health");
 
 app.Run();

@@ -1,9 +1,12 @@
-﻿name: Publish Docker Images and Helm Charts
+﻿name: Deploy Recipe Extractor Application
 
 on:
   push:
     branches:
       - release
+      - main
+  pull_request:
+    types: [labeled]
   workflow_dispatch:
 
 permissions:
@@ -11,94 +14,56 @@ permissions:
   contents: write
 
 jobs:
-  detect-changes:
+  setup:
+    name: Setup Deployment Context
     runs-on: ubuntu-latest
+    # Only run if: push to release/main, OR PR with deploy-preview label, OR manual trigger
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     outputs:
-      extraction-service: ${{ steps.changes.outputs.extraction-service }}
-      recipe-service: ${{ steps.changes.outputs.recipe-service }}
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      branch-prefix: ${{ steps.context.outputs.branch-prefix }}
+      environment: ${{ steps.context.outputs.environment }}
+      is-production: ${{ steps.context.outputs.is-production }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-      - name: Detect changes in apps
-        uses: dorny/paths-filter@v3
-        id: changes
+
+      - id: context
+        name: Compute deployment context
+        uses: ./.github/workflows/actions/get-deployment-context
         with:
-          filters: |
-            extraction-service:
-              - 'apps/extraction-service/**'
-            recipe-service:
-              - 'apps/recipe-service/**'
+          ref: ${{ github.event.inputs.ref || github.ref_name || github.ref }}
 
-      - name: Set matrix for changed apps
-        id: set-matrix
-        run: |
-          matrix_json="[]"
-
-          if [ "${{ steps.changes.outputs.extraction-service }}" = "true" ]; then
-            matrix_json=$(echo "$matrix_json" | jq '. += [{
-              "app": "extraction-service",
-              "dockerfile": "apps/extraction-service/Dockerfile",
-              "context": "apps/extraction-service"
-            }]')
-          fi
-
-          if [ "${{ steps.changes.outputs.recipe-service }}" = "true" ]; then
-            matrix_json=$(echo "$matrix_json" | jq '. += [{
-              "app": "recipe-service",
-              "dockerfile": "apps/recipe-service/Dockerfile",
-              "context": "apps/recipe-service"
-            }]')
-          fi
-
-          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
-          echo "Generated matrix:"
-          echo "$matrix_json" | jq '.'
-
-  build-images:
-    name: Build and Push Docker Images
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.matrix != '[]' }}
+  publish-images:
+    name: Build and Publish Docker Images
+    needs: setup
     strategy:
       matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Build and push ${{ matrix.app }}
-        uses: ./.github/actions/build-push-image
-        with:
-          app-name: ${{ matrix.app }}
-          context-path: ${{ matrix.context }}
-          dockerfile-path: ${{ matrix.dockerfile }}
-          registry-username: ${{ github.actor }}
-          registry-token: ${{ secrets.GITHUB_TOKEN }}
+        app:
+          - name: extraction-service
+            context: apps/extraction-service
+            dockerfile: apps/extraction-service/Dockerfile
+          - name: recipe-service
+            context: apps/recipe-service
+            dockerfile: apps/recipe-service/RecipeService.Api/Dockerfile
+    uses: ./.github/workflows/build-push-docker-images.yaml
+    with:
+      app-name: ${{ matrix.app.name }}
+      context-path: ${{ matrix.app.context }}
+      dockerfile-path: ${{ matrix.app.dockerfile }}
+      registry-username: ${{ github.actor }}
+      branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
+    secrets:
+      registry-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-chart:
     name: Publish Helm Chart
-    runs-on: ubuntu-latest
-    needs: build-images
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
-        with:
-          charts_dir: deploy
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    needs: [setup, publish-images]
+    uses: ./.github/workflows/build-push-helm-chart.yaml
+    with:
+      chart-path: deploy/recipe-extractor
+      branch-prefix: ${{ needs.setup.outputs.branch-prefix }}
+    secrets:
+      registry-token: ${{ secrets.GITHUB_TOKEN }}

@@ -9,10 +9,11 @@ public static class ServiceCollectionExtensions
     {
         // Add API-specific services
         services.AddOpenApi();
+        services.AddHealthChecks();
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
-        
+
         return services;
     }
 }
