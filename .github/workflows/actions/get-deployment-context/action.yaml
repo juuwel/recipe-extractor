@@ -1,0 +1,61 @@
+name: Get deployment context
+description: Compute branch-safe names, environment and is-production flag
+inputs:
+  ref:
+    description: "Optional ref to compute context from (e.g. refs/heads/... or branch name)"
+    required: false
+    default: ""
+outputs:
+  branch-name:
+    description: "Original branch name"
+    value: "${{ steps.context.outputs.branch-name }}"
+  branch-prefix:
+    description: "Sanitized, shortened branch prefix for tags/names"
+    value: "${{ steps.context.outputs.branch-prefix }}"
+  environment:
+    description: "Target environment (production/staging/feature-*)"
+    value: "${{ steps.context.outputs.environment }}"
+  is-production:
+    description: "true if this is a production deployment"
+    value: "${{ steps.context.outputs.is-production }}"
+runs:
+  using: "composite"
+  steps:
+    - name: Compute deployment context
+      id: context
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.ref }}" ]; then
+          REF="${{ inputs.ref }}"
+        else
+          REF="${GITHUB_REF##*/}"
+        fi
+
+        if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+          BRANCH="${{ github.head_ref }}"
+        else
+          BRANCH="${REF}"
+        fi
+
+        SAFE_NAME=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//;s/-$//')
+        BRANCH_PREFIX=$(echo "$SAFE_NAME" | cut -c1-20 | sed 's/-$//')
+        if [ -z "$BRANCH_PREFIX" ]; then BRANCH_PREFIX="$SAFE_NAME"; fi
+
+        if [ "$BRANCH" = "release" ]; then
+          ENV=production; IS_PROD=true
+        elif [ "$BRANCH" = "main" ]; then
+          ENV=staging; IS_PROD=false
+        else
+          ENV=feature-$SAFE_NAME; IS_PROD=false
+        fi
+
+        echo "branch-name=$BRANCH" >> $GITHUB_OUTPUT
+        echo "branch-prefix=$BRANCH_PREFIX" >> $GITHUB_OUTPUT
+        echo "environment=$ENV" >> $GITHUB_OUTPUT
+        echo "is-production=$IS_PROD" >> $GITHUB_OUTPUT
+
+        echo "Computed outputs:"
+        echo "branch-name=${BRANCH}"
+        echo "branch-prefix=${BRANCH_PREFIX}"
+        echo "environment=${ENV}"
+        echo "is-production=${IS_PROD}"

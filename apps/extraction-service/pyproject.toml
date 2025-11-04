@@ -7,9 +7,9 @@ packages = ["src"]
 
 [project]
 name = "recipe-extractor"
-version = "1.0.0"
+version = "2.0.0"
 description = "A tool to extract ingredients and instructions from recipe URLs and store them in Notion and a database."
-requires-python = ">= 3.13"
+requires-python = "==3.13.*"
 authors = [
     { name = "Júlia Ilášová" }
 ]

@@ -47,6 +47,6 @@ yq e -i ".version = \"$NEW_VERSION\"" deploy/recipe-extractor/Chart.yaml
 sed -i 's/^version: \"\(.*\)\"$/version: \1/' deploy/recipe-extractor/Chart.yaml
 
 # Clean up backup file
-rm apps/recipe-extractor/pyproject.toml.bak
+rm apps/extraction-service/pyproject.toml.bak
 
 echo "Bumped version to $NEW_VERSION"

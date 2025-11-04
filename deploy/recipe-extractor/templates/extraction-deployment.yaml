@@ -26,40 +26,45 @@ spec:
     - WEBHOOK_SALT
     - WEBHOOK_SECRET_KEY
 ---
+{{- if .Values.extractionService.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-extraction
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Release.Name }}
+    app: {{ .Release.Name }}-extraction
+    component: extraction-service
 spec:
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
-  replicas: {{ .Values.replicaCount }}
+      app: {{ .Release.Name }}-extraction
+  replicas: {{ .Values.extractionService.replicaCount }}
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}
+        app: {{ .Release.Name }}-extraction
+        component: extraction-service
     spec:
       imagePullSecrets:
-        - name: {{ .Values.image.pullSecret }}
+        - name: {{ .Values.imagePullSecret }}
       containers:
-        - name: {{ .Release.Name }}
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: extraction-service
+          image: {{ .Values.extractionService.image.repository }}:{{ .Values.extractionService.image.tag }}
+          imagePullPolicy: {{ .Values.extractionService.image.pullPolicy }}
           envFrom:
             - secretRef:
                 name: {{ .Release.Name }}-secret
           ports:
-            - containerPort: 8000
+            - containerPort: {{ .Values.extractionService.service.targetPort }}
+              name: http
           volumeMounts:
             - name: db-storage
               mountPath: /app/data
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.extractionService.resources | nindent 12 }}
       volumes:
         - name: db-storage
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-db
+{{- end }}

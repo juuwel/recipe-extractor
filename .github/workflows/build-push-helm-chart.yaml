@@ -1,0 +1,67 @@
+name: Publish Helm Chart
+
+on:
+  workflow_call:
+    inputs:
+      chart-path:
+        description: "Path to the Helm chart (example: deploy/recipe-extractor)"
+        required: true
+        type: string
+      branch-prefix:
+        description: "Branch prefix to compute package version from"
+        required: true
+        type: string
+    secrets:
+      registry-token:
+        description: "Token used by chart-releaser (usually GITHUB_TOKEN)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish-helm-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+            git config user.name "$GITHUB_ACTOR"
+            git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Package Helm Chart
+        run: |
+          set -euo pipefail
+          CHART_PATH="${{ inputs.chart-path }}"
+          BRANCH_PREFIX="${{ inputs.branch-prefix }}"
+
+          # read declared Chart.yaml version
+          CHART_VERSION=$(grep '^version:' "$CHART_PATH/Chart.yaml" | awk '{print $2}')
+
+          if [ "$BRANCH_PREFIX" = "release" ]; then
+            PACKAGE_VERSION="$CHART_VERSION"
+          elif [ "$BRANCH_PREFIX" = "main" ]; then
+            PACKAGE_VERSION="${CHART_VERSION}-staging.${GITHUB_SHA::8}"
+          else
+            PACKAGE_VERSION="${CHART_VERSION}-${BRANCH_PREFIX}.${GITHUB_SHA::8}"
+          fi
+
+          echo "Packaging chart version: $PACKAGE_VERSION"
+          helm package "$CHART_PATH" --version "$PACKAGE_VERSION" --app-version "$PACKAGE_VERSION" --destination .cr-release-packages
+
+          echo "package-version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: deploy
+          skip_packaging: true
+        env:
+          CR_TOKEN: "${{ secrets.registry-token }}"

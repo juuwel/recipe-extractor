@@ -9,21 +9,23 @@ spec:
       - {{ . }}
       {{- end }}
     routes:
-      {{- range .Values.ingressRoute.routes }}
+      {{- if .Values.recipeService.enabled }}
+      {{- range .Values.recipeService.routes }}
       - match: Host(`{{ $.Values.ingressRoute.host }}`) && PathPrefix(`{{ .path }}`)
         kind: Rule
         {{- if .priority }}
         priority: {{ .priority }}
         {{- end }}
         services:
-          - name: {{ $.Release.Name }}
-            port: {{ $.Values.service.port }}
+          - name: {{ $.Release.Name }}-recipe
+            port: {{ $.Values.recipeService.service.port }}
         {{- if .middlewares }}
         middlewares:
           {{- range .middlewares }}
-          - name: {{ . }}
+          - name: {{ $.Release.Name }}-{{ . }}
           {{- end }}
         {{- end }}
+      {{- end }}
       {{- end }}
     tls:
       certResolver: {{ .Values.tls.certResolver }}
@@ -31,7 +33,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: basic-auth
+  name: {{ .Release.Name }}-basic-auth
   namespace: {{ .Release.Namespace }}
 spec:
   basicAuth:
