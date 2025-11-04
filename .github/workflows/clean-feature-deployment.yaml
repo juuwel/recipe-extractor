@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Git ref to determine deployment context (branch or tag)"
+        description: "Tag to clean up (defaults to current ref)"
         required: false
 
 permissions:
@@ -48,8 +48,8 @@ jobs:
           user: ${{ github.repository_owner }}
           type: docker
           names: |
-            ghcr.io/${{ github.repository_owner }}/extraction-service
-            ghcr.io/${{ github.repository_owner }}/recipe-service
+            extraction-service
+            recipe-service
           token: ${{ secrets.GITHUB_TOKEN }}
           version-pattern: "^${{ needs.setup.outputs.branch-prefix }}.*"
           dry-run: true
